@@ -195,7 +195,7 @@ function ossuaryChambers(area, max = 6, ws = [5, 5, 7, 7, 9], hs = [3, 5, 5, 7],
 // chamber floors (litterChance); webs: chance a chamber gets a cobweb patch; spawn: chamber natives (half the chambers);
 // big: lives in the biggest chamber.
 const WARREN_STYLES = {
-  bone: { wall: 'bonewall', crack: 'crackedbone', litter: 'bones', litterChance: 0.35, webs: 0.7, spawn: 'cryptspider', big: 'webspinner', pool: 'bone' },
+  bone: { wall: 'bonewall', crack: 'crackedbone', litter: 'bones', litterChance: 0.35, webs: 0.7, spawn: 'skeleton', big: 'webspinner', pool: 'bone' },
   silk: { wall: 'silkwall', crack: 'thicksilk', litter: 'silkfloor', litterChance: 0.5, webs: 0.5, spawn: 'spiderling', big: 'webspinner', pool: 'hive' },
 };
 // Carve room c (its rect is the bounding box) in a shape. Every shape keeps the middle row and column open, so passages
@@ -230,6 +230,8 @@ function carveShape(map, c, shape, pillar = 'bonewall') {
 function buildOssuary(map, cham, mid, entry = [], area = null, style = WARREN_STYLES.bone) { // entry: its way in, inside its area (bone-walled like a passage)
   // passages run between chamber middles, so they stay inside the complex's area
   const dig = (a, b) => orthoPath(a, b).map(p => (map.get(p.x, p.y) === 'wall' && map.set(p.x, p.y, 'floor'), p));
+  // shapes first: carveShape's cave cleanup deletes floor not joined to the room's middle, which would cut a passage clipping its box
+  cham.forEach(c => carveShape(map, c, c.shape || pick(c.w < 5 || c.h < 5 ? ['rect', 'cross'] : ['rect', 'round', 'round', 'cross', 'L', 'pillared', 'cave']), style.wall));
   const joined = [cham[0]], passages = [], linked = new Set(), link = (a, b) => {
     const k = [cham.indexOf(a), cham.indexOf(b)].sort().join();
     if (!linked.has(k)) { linked.add(k); passages.push(dig(mid(a), mid(b))); }
@@ -242,7 +244,6 @@ function buildOssuary(map, cham, mid, entry = [], area = null, style = WARREN_ST
     const second = cham.filter(o => o !== c).sort((a, b) => dist(mid(a), mid(c)) - dist(mid(b), mid(c)))[1];
     if (second && chance(0.6)) link(c, second);
   }
-  cham.forEach(c => carveShape(map, c, c.shape || pick(c.w < 5 || c.h < 5 ? ['rect', 'cross'] : ['rect', 'round', 'round', 'cross', 'L', 'pillared', 'cave']), style.wall));
   // bone walls hug whatever was carved: chamber outlines and the passages between them
   const pass = [...passages.flat(), ...entry], near = (x, y) => cham.some(c => x >= c.x - 1 && x <= c.x + c.w && y >= c.y - 1 && y <= c.y + c.h);
   map.cells((x, y) => map.get(x, y) === 'wall' && DIRS.some(([dx, dy]) => map.walkable(x + dx, y + dy))).forEach(e => {
@@ -476,10 +477,22 @@ const SIDE_BUILDS = {
   },
 };
 
+// Build a warren again (up to 8 times) until every chamber (map.reserved) can be reached from map.start - a cut-off one would
+// be filled in by keepLargestRegion, taking the boss or even the entrance with it. Secret rooms count (their crack is breakable).
+function untilJoined(build) {
+  let map;
+  for (let i = 0; i < 8; i++) {
+    map = build();
+    const d = map.distanceFrom(map.start.x, map.start.y, (x, y) => map.walkable(x, y) || !!TILES[map.get(x, y)].breakable);
+    if (map.reserved.every(c => d[c.y + (c.h >> 1)][c.x + (c.w >> 1)] < Infinity)) break;
+  }
+  return map;
+}
 // The Ossuary (a side-floor under the crypt, SIDE_LEVELS.ossuary): one big bone warren - 10-14 shaped bone chambers
 // joined by looped passages, two secret rooms behind cracked walls, spiders and webs, loot deep in, and the Bone Colossus
 // oozing about the biggest of the far chambers. map.start: the first chamber (loadLevel puts the way back up there).
-function genOssuary(w, h) {
+function genOssuary(w, h) { return untilJoined(() => ossuaryOnce(w, h)); }
+function ossuaryOnce(w, h) {
   const map = new GameMap(w, h), area = { x: 2, y: 2, w: w - 4, h: h - 4 };
   let cham = [];
   for (let tries = 0; tries < 10 && cham.length < 10; tries++) cham = ossuaryChambers(area, 14);
@@ -492,7 +505,8 @@ function genOssuary(w, h) {
   // The bone forge: a chamber (not the entrance, the Colossus's or the web spinner's) knee-deep in bones, no webs, the
   // forge in the middle building skeletons from them.
   const big = cham.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
-  const forge = shuffle(cham.slice(1).filter(c => c !== far && c !== big)).sort((a, b) => (b.w >= 5 && b.h >= 5) - (a.w >= 5 && a.h >= 5))[0];
+  const away = cs => { const f = cs.filter(c => dist(roomMid(c), map.start) >= 18); return f.length ? f : cs; }; // set pieces keep clear of the entrance
+  const forge = shuffle(away(cham.slice(1).filter(c => c !== far && c !== big))).sort((a, b) => (b.w >= 5 && b.h >= 5) - (a.w >= 5 && a.h >= 5))[0];
   if (forge) {
     const c = roomMid(forge);
     for (let y = forge.y; y < forge.y + forge.h; y++)
@@ -501,8 +515,45 @@ function genOssuary(w, h) {
     map.spawns = map.spawns.filter(s => dist(s, c) > 0); // (a crypt spider may have been put there)
     map.spawns.push({ ...c, monster: 'boneforge' });
   }
-  const worm = pick(cham.slice(1).filter(c => c !== far && c !== forge)); // a bone worm nosing through the bones
-  if (worm) map.spawns.push({ ...roomMid(worm), monster: 'boneworm' });
+  const worm = pick(away(cham.slice(1).filter(c => c !== far && c !== forge))); // a bone worm nosing through the bones
+  if (worm) map.spawns.unshift({ ...roomMid(worm), monster: 'boneworm' }); // first, so a native in its chamber can't take its spot
+  map.reserved.push(...cham);
+  return map;
+}
+
+// The Ossuary, copied (EXTRA_FLOORS.ossuarynext): a sandbox to try ideas for making the floor more distinctive - chamber roles,
+// niche corridors, stirring bones, landmark lights, a Colossus tied to the bones - before any of it goes into the real one.
+function genOssuaryNext(w, h) { return untilJoined(() => ossuaryNextOnce(w, h)); }
+function ossuaryNextOnce(w, h) {
+  const map = new GameMap(w, h), area = { x: 2, y: 2, w: w - 4, h: h - 4 };
+  let cham = [];
+  for (let tries = 0; tries < 10 && cham.length < 10; tries++) cham = ossuaryChambers(area, 14);
+  buildOssuary(map, cham, roomMid);
+  for (let i = 0; i < 2; i++) addSecretRoom(map, cham, roomMid, area);
+  map.start = roomMid(cham[0]);
+  const far = cham.slice(1).sort((a, b) => dist(roomMid(b), map.start) - dist(roomMid(a), map.start)).slice(0, 4)
+    .reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
+  map.spawns.unshift({ ...roomMid(far), monster: 'colossus' }); // first, so it gets its spot (the web spinner may want it)
+  // The bone forge: a chamber (not the entrance, the Colossus's or the web spinner's) knee-deep in bones, no webs, the
+  // forge in the middle building skeletons from them.
+  const big = cham.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
+  const away = cs => { const f = cs.filter(c => dist(roomMid(c), map.start) >= 18); return f.length ? f : cs; }; // set pieces keep clear of the entrance
+  const forge = shuffle(away(cham.slice(1).filter(c => c !== far && c !== big))).sort((a, b) => (b.w >= 5 && b.h >= 5) - (a.w >= 5 && a.h >= 5))[0];
+  if (forge) {
+    const c = roomMid(forge);
+    for (let y = forge.y; y < forge.y + forge.h; y++)
+      for (let x = forge.x; x < forge.x + forge.w; x++) if (['floor', 'bones', 'web'].includes(map.get(x, y))) map.set(x, y, chance(0.55) ? 'bones' : 'floor');
+    map.set(c.x, c.y, 'floor');
+    map.spawns = map.spawns.filter(s => dist(s, c) > 0); // (a crypt spider may have been put there)
+    map.spawns.push({ ...c, monster: 'boneforge' });
+  }
+  const worm = pick(away(cham.slice(1).filter(c => c !== far && c !== forge))); // a bone worm nosing through the bones
+  if (worm) map.spawns.unshift({ ...roomMid(worm), monster: 'boneworm' }); // first, so a native in its chamber can't take its spot
+  // Bone heaps (level.stirBones, tickBones): half the chambers - not the entrance or the forge's - get one, off the middle row and column.
+  for (const c of cham.slice(1).filter(r => r !== forge && chance(0.5))) {
+    const m = roomMid(c), spots = map.cells((x, y) => x >= c.x && x < c.x + c.w && y >= c.y && y < c.y + c.h && x !== m.x && y !== m.y && ['floor', 'bones'].includes(map.get(x, y)));
+    if (spots.length) { const p = pick(spots); map.set(p.x, p.y, 'bonepile'); }
+  }
   map.reserved.push(...cham);
   return map;
 }
@@ -512,7 +563,8 @@ function genOssuary(w, h) {
 // cobwebs, spiderlings. Cocoons line chamber edges (cut them open: an old adventurer's gear, a spiderling brood or a
 // husk), egg clutches sit in some chambers (they hatch as you come near - tickEggs), two sealed side rooms behind thick
 // silk (bump it 3x), and the Broodmother - a mass-form multibody laying eggs as she goes - in the biggest far chamber.
-function genHive(w, h) {
+function genHive(w, h) { return untilJoined(() => hiveOnce(w, h)); }
+function hiveOnce(w, h) {
   const map = new GameMap(w, h), area = { x: 2, y: 2, w: w - 4, h: h - 4 }, S = WARREN_STYLES.silk;
   // Spiders need room to spread their legs: the Broodmother's lair (15x11, in a far corner) goes in first, then roomy
   // chambers round it; the entrance is the chamber farthest from the lair.
@@ -573,6 +625,25 @@ function genGearTest(w, h) {
   map.start = { x: 4, y: h >> 1 };
   const rows = [POOL_BASES.bone.slice(0, 6), POOL_BASES.bone.slice(6), POOL_BASES.hive];
   rows.forEach((set, r) => set.forEach((b, i) => map.loot.push({ x: 8 + i * 2, y: 4 + r * 3, base: b.name })));
+  return placeTorches(map, 4, 4);
+}
+
+// Bone heap glyph test (EXTRA_FLOORS.bonetest): one column per candidate glyph (left to right = BONE_GLYPHS), three rows - resting on
+// bare floor, resting in bone litter, and stirring - to pick the look of a bone heap (bonepile / bonestir in map.js).
+const BONE_GLYPHS = ['∩', '⌂', '¤', '░', '▒', 'Ω', '∞', '"', '^', ','];
+function genBoneTest(w, h) {
+  const map = new GameMap(w, h);
+  carveRect(map, 2, 2, w - 4, h - 4);
+  map.start = { x: 3, y: h - 4 };
+  BONE_GLYPHS.forEach((ch, i) => {
+    TILES['boneresting' + i] = { ...TILES.bonepile, ch };
+    TILES['bonestirring' + i] = { ...TILES.bonestir, ch };
+    const x = 4 + i * 2;
+    map.set(x, 4, 'boneresting' + i);
+    for (const [dx, dy] of [[0, 0], ...DIRS]) map.set(x + dx, 8 + dy, 'bones'); // a patch of bone litter round it
+    map.set(x, 8, 'boneresting' + i);
+    map.set(x, 12, 'bonestirring' + i);
+  });
   return placeTorches(map, 4, 4);
 }
 

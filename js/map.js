@@ -120,6 +120,9 @@ const TILES = {
   runeflare: { ch: '*', color: '#ff66cc', bg: '#3a1040', walk: true, css: 'swell', name: 'flaring rune' }, // a wave rises here next turn
   // A summoner's mark (raise.warn): something rises from here next turn (AI.summoner). Nobody can step on it.
   stirbones: { ch: ',', color: '#fff4c0', bg: '#4a3410', walk: false, css: 'swell', name: 'stirring bones' },
+  // Ossuary heaps (level.stirBones, see tickBones in features.js): walkable until one stirs - then nobody can step on it, and a skeleton rises next turn.
+  bonepile:  { ch: ',', color: '#d8cfa8', walk: true, name: 'heap of bones' },
+  bonestir:  { ch: ',', color: '#fff4c0', bg: '#4a3410', walk: false, css: 'swell', name: 'stirring heap of bones' },
   stirwater: { ch: '~', color: '#a0ffff', bg: '#0c3a4a', walk: false, css: 'swell', name: 'churning water' },
   // special-room wall materials (all solid). bg: optional tile background
   granite:  { ch: '#', color: '#7d93d6', bg: '#2c3a66', walk: false, opaque: true },

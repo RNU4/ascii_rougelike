@@ -213,6 +213,24 @@ function tickEggs(g) {
     }
 }
 
+// Bone heaps (levels with `stirBones`, the Ossuary sandbox): one within 3 tiles of you may start to stir (bonestir: a turn's
+// warning), and next turn a skeleton clambers out of it. Heaps are placed by the generator (bonepile), so it's a handful per floor.
+function tickBones(g) {
+  if (!g.level.stirBones) return;
+  const m = g.map, p = g.player;
+  for (const c of m.cells((x, y) => m.get(x, y) === 'bonestir')) {
+    m.set(c.x, c.y, 'bones');
+    g.spawn(MONSTERS.skeleton, c);
+    Object.assign(g.monsters.at(-1), { awake: true, flashCss: { turn: g.turn, css: 'hatch' } });
+    if (m.visible[c.y][c.x]) g.log('A skeleton clambers out of the bones!', '#d8cfa8');
+  }
+  for (const c of m.cells((x, y) => m.get(x, y) === 'bonepile' && dist({ x, y }, p) <= 3 && !g.occupied(x, y)))
+    if (chance(0.25)) {
+      m.set(c.x, c.y, 'bonestir');
+      if (m.visible[c.y][c.x]) g.log('A heap of bones rattles and stirs...', '#d8cfa8');
+    }
+}
+
 // Oil lamp (Silk Hive walls - left by earlier explorers; the only steady light): walk into it to knock it down - it and
 // the silk walls round it catch fire (the floor a turn later, as it spreads), so any class can burn the hive.
 TILES.oillamp.onBump = (g, x, y) => {
@@ -225,7 +243,7 @@ TILES.oillamp.onBump = (g, x, y) => {
 // floor are silent.
 TILES.silkfloor.onEnter = (g, x, y) => {
   if (g.player.status.hidden) return; // Vanish: you step lightly
-  const woken = g.monsters.filter(m => m.alive && !m.awake && m.webs && dist(m, { x, y }) <= 6);
+  const woken = g.monsters.filter(m => m.alive && !m.awake && m.webs && dist(m, { x, y }) <= 6 && g.map.hasLos(m, { x, y }));
   if (!woken.length) return;
   woken.forEach(m => { m.awake = true; });
   g.log('The silk trembles under your feet - something stirs in the dark.', '#c8c898');

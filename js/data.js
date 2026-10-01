@@ -269,6 +269,15 @@ const EXTRA_FLOORS = {
     name: 'Spider test room', depth: 4, intro: 'A test room: the Broodmother and a giant spider.', gen: (w, h) => genSpiderTest(w, h),
     size: [44, 22], fov: 40, colors: { floor: '#3e3a30' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
   },
+  bonetest: { // bone heap glyph candidates (genBoneTest)
+    name: 'Bone heap test room', depth: 3, intro: `Bone heap glyphs, left to right: ${BONE_GLYPHS.join(' ')}. Rows: bare floor, in bone litter, stirring.`,
+    gen: (w, h) => genBoneTest(w, h), size: [26, 16], fov: 40, noStairs: true, colors: { floor: '#2e2a24' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
+  },
+  ossuarynext: { // a copy of the Ossuary to try ideas on (genOssuaryNext)
+    name: 'the Ossuary (next)', depth: 3, intro: 'The Ossuary, copied: a place to try new ideas.', gen: (w, h) => genOssuaryNext(w, h), size: [72, 36], fov: 4, noStairs: true, stirBones: true,
+    colors: { wall: '#5a5a66', floor: '#2e2a24' }, chars: { wall: '#' },
+    monsters: ['cryptspider', 'webspinner', 'skeleton', 'skeleton', 'skeleton', 'hand', 'hand', 'ghoul'], count: 20, items: 6,
+  },
   hive: {
     name: 'the Silk Hive', depth: 4, intro: 'Silk everywhere - walls of it, floors of it, shapes wrapped in it. The air ticks with tiny legs. Fire would go through this place like a flood.',
     gen: (w, h) => genHive(w, h), size: [90, 44], fov: 4,
@@ -282,6 +291,6 @@ const SIDE_LEVELS = {
     name: 'the Ossuary', intro: 'Walls of skulls, drifts of bones, cobwebs thick as curtains. Somewhere in the dark, something vast is shifting.',
     gen: (w, h) => genOssuary(w, h), size: [72, 36], fov: 4, noStairs: true, depth: 3, // (depth: the floor it lies under)
     colors: { wall: '#5a5a66', floor: '#2e2a24' }, chars: { wall: '#' },
-    monsters: ['cryptspider', 'cryptspider', 'webspinner', 'skeleton', 'skeleton', 'hand', 'ghoul'], count: 20, items: 6,
+    monsters: ['cryptspider', 'webspinner', 'skeleton', 'skeleton', 'skeleton', 'hand', 'hand', 'ghoul'], count: 20, items: 6,
   },
 };
