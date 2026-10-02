@@ -231,6 +231,30 @@ function tickBones(g) {
     }
 }
 
+// Stepping into a niche (addNiches): the find recorded in map.nicheFx - a little mana, a trap of bone shards, or just a line of lore.
+const NICHE_LORE = ['Bones and a cracked skull, laid to rest long ago.', 'A name is scratched into the stone, worn smooth.', 'Dust and a rusted chain. Nothing worth taking.'];
+TILES.niche.onEnter = (g, x, y) => {
+  const fx = g.map.nicheFx?.[x + ',' + y];
+  if (!fx) return; // (a niche holding a pickup: the pickup is the find)
+  g.map.set(x, y, 'nicheused');
+  const p = g.player;
+  if (fx === 'mp') { p.mp = Math.min(p.maxMp, p.mp + 3); g.log('A skull in the niche glows faintly - your mind clears. (+3 MP)', '#8cf'); }
+  else if (fx === 'trap') { const n = 3 + g.depth; g.log(`Bone shards spill from the niche and cut you for ${n}!`, '#f66'); p.hurt(n, g, { obj: 'a burial niche' }); }
+  else g.log(pick(NICHE_LORE), '#a89a74');
+};
+
+// Hidden niche skeletons (levels with `niches`, addNiches): walk past a nicheam (alongside it) and a skeleton lurches out of the alcove.
+function tickNiches(g) {
+  if (!g.level.niches) return;
+  const m = g.map, p = g.player;
+  for (const c of m.cells((x, y) => m.get(x, y) === 'nicheam' && dist({ x, y }, p) <= 1 && !g.occupied(x, y))) {
+    m.set(c.x, c.y, 'niche');
+    g.spawn(MONSTERS.skeleton, c);
+    Object.assign(g.monsters.at(-1), { awake: true, flashCss: { turn: g.turn, css: 'hatch' } });
+    g.log('A skeleton lurches out of a burial niche!', '#d8cfa8');
+  }
+}
+
 // Oil lamp (Silk Hive walls - left by earlier explorers; the only steady light): walk into it to knock it down - it and
 // the silk walls round it catch fire (the floor a turn later, as it spreads), so any class can burn the hive.
 TILES.oillamp.onBump = (g, x, y) => {

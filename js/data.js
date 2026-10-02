@@ -274,7 +274,7 @@ const EXTRA_FLOORS = {
     gen: (w, h) => genBoneTest(w, h), size: [26, 16], fov: 40, noStairs: true, colors: { floor: '#2e2a24' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
   },
   ossuarynext: { // a copy of the Ossuary to try ideas on (genOssuaryNext)
-    name: 'the Ossuary (next)', depth: 3, intro: 'The Ossuary, copied: a place to try new ideas.', gen: (w, h) => genOssuaryNext(w, h), size: [72, 36], fov: 4, noStairs: true, stirBones: true,
+    name: 'the Ossuary (next)', depth: 3, intro: 'The Ossuary, copied: a place to try new ideas.', gen: (w, h) => genOssuaryNext(w, h), size: [72, 36], fov: 4, noStairs: true, stirBones: true, niches: true,
     colors: { wall: '#5a5a66', floor: '#2e2a24' }, chars: { wall: '#' },
     monsters: ['cryptspider', 'webspinner', 'skeleton', 'skeleton', 'skeleton', 'hand', 'hand', 'ghoul'], count: 20, items: 6,
   },

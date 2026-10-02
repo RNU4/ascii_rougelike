@@ -260,6 +260,33 @@ function buildOssuary(map, cham, mid, entry = [], area = null, style = WARREN_ST
   if (area && chance(0.5)) addSecretRoom(map, cham, mid, area, style); // sometimes: a sealed room behind a cracked wall
 }
 
+// Burial niches: one-tile alcoves cut into the walls of a warren's corridors (the passage tiles outside every chamber), at most one
+// per 3 tiles. Each holds a pickup (`loot`) or a hidden skeleton (`nicheam`, see tickNiches) or reacts when you step in (`map.nicheFx`: a mana boost, bone shards, a bit of lore). The alcove's own walls are
+// re-hugged in the style's wall. Corridors keep their shape: a niche is a dead end off the side, so connectivity is untouched.
+function addNiches(map, cham, style = WARREN_STYLES.bone, { loot = 0.22, ambush = 0.22 } = {}) {
+  const box = [...cham, ...(map.secrets || [])], inBox = (x, y) => box.some(r => x >= r.x - 1 && x < r.x + r.w + 1 && y >= r.y - 1 && y < r.y + r.h + 1);
+  const open = (x, y) => map.inBounds(x, y) && map.walkable(x, y), solid = (x, y) => map.inBounds(x, y) && !map.walkable(x, y) && !TILES[map.get(x, y)].breakable;
+  const made = [];
+  for (const c of shuffle(map.cells((x, y) => map.walkable(x, y) && !inBox(x, y)))) {
+    const vert = open(c.x, c.y - 1) && open(c.x, c.y + 1) && !open(c.x - 1, c.y) && !open(c.x + 1, c.y);
+    const horiz = open(c.x - 1, c.y) && open(c.x + 1, c.y) && !open(c.x, c.y - 1) && !open(c.x, c.y + 1);
+    if (!vert && !horiz) continue;
+    const side = pick(vert ? [[-1, 0], [1, 0]] : [[0, -1], [0, 1]]), [sx, sy] = side, ax = vert ? 0 : 1, ay = vert ? 1 : 0; // side = out of the corridor, a = along it
+    const n = { x: c.x + sx, y: c.y + sy };
+    const ring = [[0, 0], [sx, sy], [sx + ax, sy + ay], [sx - ax, sy - ay], [ax, ay], [-ax, -ay]].map(([dx, dy]) => ({ x: n.x + dx, y: n.y + dy }));
+    if (!ring.every(p => map.inBounds(p.x, p.y) && p.x > 0 && p.y > 0 && p.x < map.w - 1 && p.y < map.h - 1 && solid(p.x, p.y)) || inBox(n.x, n.y)) continue;
+    if (made.some(o => dist(o, n) < 3)) continue;
+    map.set(n.x, n.y, 'niche');
+    DIRS.forEach(([dx, dy]) => map.get(n.x + dx, n.y + dy) === 'wall' && map.set(n.x + dx, n.y + dy, style.wall)); // hug the alcove like the passage
+    const r = Math.random();
+    if (r < loot) map.loot.push({ x: n.x, y: n.y, ...(chance(0.7) ? { item: pick(['Healing Potion', 'Mana Potion']) } : { rarity: 'common' }) });
+    else if (r < loot + ambush) map.set(n.x, n.y, 'nicheam');
+    else (map.nicheFx ||= {})[n.x + ',' + n.y] = pick(['mp', 'mp', 'trap', 'lore', 'lore', 'lore']); // the rest react when stepped in (TILES.niche.onEnter)
+    made.push(n);
+  }
+  return made;
+}
+
 // An ossuary's secret room: a small sealed chamber behind a cracked bone wall (crackedbone) in the middle of one of its
 // chambers' sides - only where it fits in untouched rock inside the complex's area (so nothing built later cuts in).
 // Placeholder contents for now: a rare item. Recorded in map.secrets.
@@ -530,6 +557,7 @@ function ossuaryNextOnce(w, h) {
   for (let tries = 0; tries < 10 && cham.length < 10; tries++) cham = ossuaryChambers(area, 14);
   buildOssuary(map, cham, roomMid);
   for (let i = 0; i < 2; i++) addSecretRoom(map, cham, roomMid, area);
+  addNiches(map, cham); // corridors lined with burial niches
   map.start = roomMid(cham[0]);
   const far = cham.slice(1).sort((a, b) => dist(roomMid(b), map.start) - dist(roomMid(a), map.start)).slice(0, 4)
     .reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
