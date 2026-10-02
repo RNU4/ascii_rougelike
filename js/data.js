@@ -119,7 +119,7 @@ const MONSTERS = {
   // parts that share its HP. form 'mass': it oozes toward its prey as a blob, shrinks as it's hurt (parts slough off as
   // bones: its tiles = size x HP share) and collapses into bones when the core dies. An area skill hurts it once.
   colossus: { name: 'Bone Colossus', ch: '☼', color: '#fff4d8', css: 'writhe', hp: 60, atk: 8, def: 2, xp: 60, ai: 'multibody', faction: 'undead',
-    size: 8, part: 'colossuspart', form: 'mass', remains: 'bones', shedMsg: 'Bones slough off the Bone Colossus!', loot: 'rare', lootPool: 'bone' },
+    size: 8, surround: { bonus: 0.08 }, part: 'colossuspart', form: 'mass', remains: 'bones', shedMsg: 'Bones slough off the Bone Colossus!', loot: 'rare', lootPool: 'bone' },
   // Bone Worm (Ossuary): a chain-form multibody (see Bone Colossus) with a poison bite that dives into bone piles when
   // hurt and bursts up again near you (`burrow`, tryBurrow in ai.js).
   boneworm: { name: 'bone worm', ch: '◙', color: '#e8dcb0', hp: 40, atk: 6, def: 1, xp: 40, ai: 'multibody', faction: 'undead',

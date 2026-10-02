@@ -90,6 +90,46 @@ function bodyFrontier(g, m) {
 }
 // Mass form (Bone Colossus): how far a part may fall toward the core in one turn (see AI.multibody).
 const MASS_REACH = 2;
+// Mass form: the parts nearest the core fall in against it first, so the ones behind have room to fall in too (up to MASS_REACH tiles each),
+// always against a part already placed (`placed`, starting with the core) - the body packs itself into a blob round the core and never splits.
+// dm: steps to the core round the walls, so a part in a room corner finds the doorway; one with no way to join the body yet just closes in.
+function packMass(m, g, parts, placed = [m]) {
+  const near = (a, b) => Math.abs(a.x - b.x) <= 1 && Math.abs(a.y - b.y) <= 1, dm = g.map.distanceFrom(m.x, m.y, (x, y) => g.map.walkable(x, y));
+  for (const q of [...parts].sort((a, b) => dm[a.y][a.x] - dm[b.y][b.x] || dist(a, m) - dist(b, m))) {
+    for (let k = 0; k < MASS_REACH; k++) {
+      const d2 = c => (c.x - m.x) ** 2 + (c.y - m.y) ** 2, nearer = c => dm[c.y][c.x] < dm[q.y][q.x] || (dm[c.y][c.x] === dm[q.y][q.x] && d2(c) < d2(q));
+      const moves = DIRS.map(([dx, dy]) => ({ x: q.x + dx, y: q.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(q.x, q.y, c.x, c.y) && nearer(c));
+      const joined = moves.filter(c => placed.some(p => near(p, c)));
+      const c = (joined.length ? joined : moves).sort((x, y) => dm[x.y][x.x] - dm[y.y][y.x] || d2(x) - d2(y))[0];
+      if (!c) break;
+      Object.assign(q, c);
+    }
+    placed.push(q);
+  }
+}
+// Surrounding (template `surround: { bonus }`, mass form): once a part touches its prey and the core is within 2 of it (so the body can't be
+// stretched into a string after a runner) the body stops packing round the core and spreads round the prey instead - every part heads (up to MASS_REACH tiles a turn, round its mates) for a free tile touching it. Each part touching
+// the prey past the first adds `bonus` to the damage of the Colossus's bite (see the end of AI.multibody).
+function surroundTarget(m, g, t, body) {
+  const mine = new Set([m, ...body]), free = (x, y) => !g.occupied(x, y) || mine.has(g.monsterAt(x, y)), at = (q, c) => q.x === c.x && q.y === c.y;
+  const ring = DIRS.map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy })).filter(c => g.map.walkable(c.x, c.y) && g.map.canStep(c.x, c.y, t.x, t.y) && free(c.x, c.y));
+  const open = ring.filter(c => ![m, ...body].some(q => at(q, c)));
+  const spare = []; // parts with no free tile left round the prey (a corner, a wall): they pack in toward the core instead of standing about
+  for (const q of body.filter(q => !ring.some(c => at(q, c))).sort((a, b) => dist(a, t) - dist(b, t))) { // the parts not touching it yet, nearest first
+    const goal = open.reduce((a, b) => (!a || dist(b, q) < dist(a, q) ? b : a), null);
+    if (!goal) { spare.push(q); continue; }
+    const d = g.map.distanceFrom(goal.x, goal.y, (x, y) => g.map.walkable(x, y) && free(x, y)); // (round the other parts)
+    if (d[q.y][q.x] > 4) { spare.push(q); continue; } // no short way to it (the far side of a prey in a passage, round a wall): it packs in instead of wandering off
+    open.splice(open.indexOf(goal), 1);
+    for (let k = 0; k < MASS_REACH && !at(q, goal); k++) {
+      const c = DIRS.map(([dx, dy]) => ({ x: q.x + dx, y: q.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(q.x, q.y, c.x, c.y))
+        .sort((x, y) => d[x.y][x.x] - d[y.y][y.x])[0];
+      if (!c || d[c.y][c.x] >= d[q.y][q.x]) break;
+      Object.assign(q, c);
+    }
+  }
+  packMass(m, g, spare, [m, ...body.filter(q => !spare.includes(q))]);
+}
 // Grow the body back up to bodySize; returns the new parts.
 function assembleBody(m, g) {
   const grown = [];
@@ -352,34 +392,24 @@ const AI = {
       if (near(q, trail) && !g.occupied(trail.x, trail.y)) Object.assign(q, trail);
       else if (!near(q, ahead)) step(q, ahead, c => (near(c, ahead) ? 0 : 1));
     });
-    else { // mass: the parts nearest the core fall in against it first, so the ones behind have room to fall in too (up to MASS_REACH tiles
-      // each), always against the part before them - the body packs itself into a blob round the core and never splits
-      const placed = [m], dm = g.map.distanceFrom(m.x, m.y, (x, y) => g.map.walkable(x, y)); // dm: steps to the core round the walls (a part in a room corner finds the doorway)
-      for (const q of [...body].sort((a, b) => dm[a.y][a.x] - dm[b.y][b.x] || dist(a, m) - dist(b, m))) {
-        for (let k = 0; k < MASS_REACH; k++) {
-          const d2 = c => (c.x - m.x) ** 2 + (c.y - m.y) ** 2, nearer = c => dm[c.y][c.x] < dm[q.y][q.x] || (dm[c.y][c.x] === dm[q.y][q.x] && d2(c) < d2(q));
-          const moves = DIRS.map(([dx, dy]) => ({ x: q.x + dx, y: q.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(q.x, q.y, c.x, c.y) && nearer(c));
-          const joined = moves.filter(c => placed.some(p => near(p, c))); // (a straggler with no way to join the body yet just closes in on the core)
-          const c = (joined.length ? joined : moves).sort((x, y) => dm[x.y][x.x] - dm[y.y][y.x] || d2(x) - d2(y))[0];
-          if (!c) break;
-          Object.assign(q, c);
-        }
-        placed.push(q);
-      }
-    }
+    else if (m.surround && t && dist(m, t) <= 2 && bites()) surroundTarget(m, g, t, body); // its core is close and a part touches its prey: close round it
+    else packMass(m, g, body); // mass: the body packs into a blob round the core
     if (m.lays && t && g.turn % m.lays.every === 0) { // laying eggs (Broodmother): beside its body, on open ground
       const spot = pick([m, ...bodyParts(m)].flatMap(q => DIRS.map(([dx, dy]) => ({ x: q.x + dx, y: q.y + dy })))
         .filter(c => ['floor', 'silkfloor', 'ash'].includes(g.map.get(c.x, c.y)) && !g.occupied(c.x, c.y) && dist(c, t) > 1));
       if (spot) { g.map.set(spot.x, spot.y, m.lays.tile); if (g.map.visible[spot.y][spot.x]) g.log(`${m.subj} lays a clutch of eggs!`, m.color); }
     }
     if (m.fangCd > 0) m.fangCd--;
-    if (!bites()) return;
+    if (!bites()) { m.surrounding = false; return; }
     if (m.fang && !m.fangCd) { // its special bite, every `fang.every` turns
       m.fangCd = m.fang.every;
       if (g.map.visible[m.y]?.[m.x]) g.log(m.fang.msg, m.color);
       return m.attack(t, g, { mult: m.fang.mult, status: m.fang.status, verb: 'bite' });
     }
-    m.attack(t, g);
+    const adj = m.surround ? [m, ...bodyParts(m)].filter(q => dist(q, t) === 1).length : 0; // (surround) parts touching its prey
+    if (m.surround && adj >= 4 && !m.surrounding && g.map.visible[m.y]?.[m.x]) g.log(`${m.subj} closes in around ${t.obj}!`, m.color);
+    m.surrounding = adj >= 4;
+    m.attack(t, g, m.surround ? { mult: 1 + m.surround.bonus * Math.max(0, adj - 1) } : undefined);
     if (m.skirmish && chance(0.6)) m.backoff = 2; // (spiders) strike, then scuttle back
   },
   segment() {}, // a Colossus part: its core moves it
