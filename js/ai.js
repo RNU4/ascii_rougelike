@@ -88,6 +88,8 @@ function bodyFrontier(g, m) {
   const away = m.target || m;
   return chain ? cells.sort((a, b) => dist(b, away) - dist(a, away))[0] : cells[0];
 }
+// Mass form (Bone Colossus): how far a part may fall toward the core in one turn (see AI.multibody).
+const MASS_REACH = 2;
 // Grow the body back up to bodySize; returns the new parts.
 function assembleBody(m, g) {
   const grown = [];
@@ -272,11 +274,11 @@ const AI = {
     g.stepAlongPath(m, g.map.distanceFrom(t.x, t.y, (x, y) => g.map.passable(x, y))) || g.stepToward(m, t);
   },
   // A multi-tile creature's core (see bodyParts). The core steps toward its prey along real paths; then the body follows,
-  // every part moving at most a tile a turn (so it all slides smoothly):
-  //  - form 'mass' (Bone Colossus): outward from the core, each part shifts by the core's step (the mass keeps its shape),
-  //    choosing only tiles that touch the part of the body already placed - it never splits; in a corridor, where walls
-  //    stop the shift, parts take the tiles the ones ahead left and it strings out like a snake. The core may swap with
-  //    a part in its way. Attacks with whichever part touches its prey.
+  // every part moving at most a tile a turn (so it all slides smoothly; a mass part may fall in up to MASS_REACH):
+  //  - form 'mass' (Bone Colossus): the parts nearest the core fall in against it first, then the ones behind (up to MASS_REACH tiles
+  //    each, only onto tiles touching the part of the body already placed), packing the body into a blob round the core (a 3x3 minus one for 8 tiles; in a 1-wide passage it is
+  //    a line, and re-forms within a few turns once it's out). A part with no way to join the body yet closes in on the core by
+  //    path (`dm`). The core may swap with a part in its way. Attacks with whichever part touches its prey.
   //  - form 'chain' (snakes): follow the leader - each part moves into the tile the one ahead of it just left, so the
   //    body winds exactly along the head's path. Only the head bites.
   //  Parts cut off (knocked away) head back toward the one they belong next to.
@@ -350,12 +352,18 @@ const AI = {
       if (near(q, trail) && !g.occupied(trail.x, trail.y)) Object.assign(q, trail);
       else if (!near(q, ahead)) step(q, ahead, c => (near(c, ahead) ? 0 : 1));
     });
-    else { // mass: from the core outward, shift by the core's step while touching the placed body
-      const order = [m];
-      for (let i = 0; i < order.length; i++) for (const q of body) if (!order.includes(q) && near({ x: q.x, y: q.y }, old[[m, ...body].indexOf(order[i])])) order.push(q);
-      const shift = { x: m.x - old[0].x, y: m.y - old[0].y }, placed = [m];
-      for (const q of [...order.slice(1), ...body.filter(q => !order.includes(q))]) {
-        step(q, order.includes(q) ? { x: q.x + shift.x, y: q.y + shift.y } : m, c => (placed.some(p => near(p, c)) ? 0 : 1));
+    else { // mass: the parts nearest the core fall in against it first, so the ones behind have room to fall in too (up to MASS_REACH tiles
+      // each), always against the part before them - the body packs itself into a blob round the core and never splits
+      const placed = [m], dm = g.map.distanceFrom(m.x, m.y, (x, y) => g.map.walkable(x, y)); // dm: steps to the core round the walls (a part in a room corner finds the doorway)
+      for (const q of [...body].sort((a, b) => dm[a.y][a.x] - dm[b.y][b.x] || dist(a, m) - dist(b, m))) {
+        for (let k = 0; k < MASS_REACH; k++) {
+          const d2 = c => (c.x - m.x) ** 2 + (c.y - m.y) ** 2, nearer = c => dm[c.y][c.x] < dm[q.y][q.x] || (dm[c.y][c.x] === dm[q.y][q.x] && d2(c) < d2(q));
+          const moves = DIRS.map(([dx, dy]) => ({ x: q.x + dx, y: q.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(q.x, q.y, c.x, c.y) && nearer(c));
+          const joined = moves.filter(c => placed.some(p => near(p, c))); // (a straggler with no way to join the body yet just closes in on the core)
+          const c = (joined.length ? joined : moves).sort((x, y) => dm[x.y][x.x] - dm[y.y][y.x] || d2(x) - d2(y))[0];
+          if (!c) break;
+          Object.assign(q, c);
+        }
         placed.push(q);
       }
     }
