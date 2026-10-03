@@ -243,6 +243,25 @@ TILES.niche.onEnter = (g, x, y) => {
   else g.log(pick(NICHE_LORE), '#a89a74');
 };
 
+// The hand room (map.handRoom, addHandRoom): step inside and the walls writhe - then 2 a turn the hands set in them (handwall) claw loose: the tile goes
+// back to plain bone wall and a crawling hand drops onto a free floor tile beside it, awake and hunting.
+function tickHandRoom(g) {
+  const hr = g.map.handRoom, m = g.map, p = g.player;
+  if (!hr) return;
+  if (!hr.woken) {
+    if (!(p.x >= hr.x && p.x < hr.x + hr.w && p.y >= hr.y && p.y < hr.y + hr.h)) return;
+    hr.woken = true;
+    g.log('The walls of the chamber writhe - hands claw their way out of the bone!', '#e8d8b8');
+  }
+  for (const c of shuffle(m.cells((x, y) => m.get(x, y) === 'handwall')).slice(0, 2)) {
+    const spot = pick(DIRS.slice(0, 4).map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy })).filter(s => m.walkable(s.x, s.y) && !g.occupied(s.x, s.y)));
+    if (!spot) continue; // boxed in: it stays a wall of hands for now
+    m.set(c.x, c.y, 'bonewall');
+    g.spawn(MONSTERS.hand, spot);
+    Object.assign(g.monsters.at(-1), { awake: true, spawnFrom: { x: c.x, y: c.y }, flashCss: { turn: g.turn, css: 'hatch' } });
+  }
+}
+
 // Hidden niche skeletons (levels with `niches`, addNiches): walk past a nicheam (alongside it) and a skeleton lurches out of the alcove.
 function tickNiches(g) {
   if (!g.level.niches) return;

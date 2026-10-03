@@ -125,6 +125,8 @@ const TILES = {
   bonestir:  { ch: ',', color: '#fff4c0', bg: '#4a3410', walk: false, css: 'swell', name: 'stirring heap of bones' },
   // Burial niches (addNiches, level.niches): alcoves in a corridor wall. nicheam looks the same - something lurches out when you pass (tickNiches).
   niche:     { ch: '∩', color: '#a89a74', bg: '#2a2418', walk: true, name: 'burial niche' },
+  // The hand room (addHandRoom, tickHandRoom): a wall with hands set into it. Step into the room and they claw loose (back to bonewall, a crawling hand beside it).
+  handwall:  { ch: 'ƒ', color: '#e8d8b8', bg: '#3a3020', walk: false, opaque: true, name: 'wall of hands' },
   nicheused: { ch: '∩', color: '#6a6048', bg: '#201c12', walk: true, name: 'burial niche' }, // a niche whose find you've had
   nicheam:   { ch: '∩', color: '#a89a74', bg: '#2a2418', walk: true, name: 'burial niche' },
   stirwater: { ch: '~', color: '#a0ffff', bg: '#0c3a4a', walk: false, css: 'swell', name: 'churning water' },

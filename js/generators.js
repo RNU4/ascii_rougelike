@@ -287,6 +287,22 @@ function addNiches(map, cham, style = WARREN_STYLES.bone, { loot = 0.22, ambush 
   return made;
 }
 
+// The hand room: one chamber (from `cands`, 5x5 or bigger if any) is the crawling hands' - bone litter on the floor, a rare pickup in the middle,
+// and up to `n` wall tiles hugging the floor set with hands (`handwall`, 2 or more tiles apart). Its own natives are removed. Step inside and they
+// claw out (tickHandRoom). Recorded in map.handRoom (the chamber's rect). Returns the chamber, or null.
+function addHandRoom(map, cands, n = 8) {
+  const roomy = cands.filter(r => r.w >= 5 && r.h >= 5), c = pick(roomy.length ? roomy : cands);
+  if (!c) return null;
+  const inside = (x, y) => x >= c.x && x < c.x + c.w && y >= c.y && y < c.y + c.h, mid = roomMid(c);
+  map.spawns = map.spawns.filter(s => !inside(s.x, s.y));
+  map.cells((x, y) => inside(x, y) && ['floor', 'web'].includes(map.get(x, y)) && chance(0.4)).forEach(p => map.set(p.x, p.y, 'bones'));
+  map.loot.push({ ...mid, rarity: 'rare', pool: 'bone' });
+  const spots = shuffle(map.cells((x, y) => map.get(x, y) === 'bonewall' && DIRS.slice(0, 4).some(([dx, dy]) => inside(x + dx, y + dy) && map.walkable(x + dx, y + dy))));
+  const made = [];
+  for (const s of spots) if (made.length < n && !made.some(o => dist(o, s) < 2)) { map.set(s.x, s.y, 'handwall'); made.push(s); }
+  map.handRoom = { x: c.x, y: c.y, w: c.w, h: c.h, woken: false };
+  return c;
+}
 // An ossuary's secret room: a small sealed chamber behind a cracked bone wall (crackedbone) in the middle of one of its
 // chambers' sides - only where it fits in untouched rock inside the complex's area (so nothing built later cuts in).
 // Placeholder contents for now: a rare item. Recorded in map.secrets.
@@ -577,8 +593,9 @@ function ossuaryNextOnce(w, h) {
   }
   const worm = pick(away(cham.slice(1).filter(c => c !== far && c !== forge))); // a bone worm nosing through the bones
   if (worm) map.spawns.unshift({ ...roomMid(worm), monster: 'boneworm' }); // first, so a native in its chamber can't take its spot
+  const handRoom = addHandRoom(map, cham.slice(1).filter(c => ![far, forge, worm, big].includes(c))); // a chamber of crawling hands
   // Bone heaps (level.stirBones, tickBones): half the chambers - not the entrance or the forge's - get one, off the middle row and column.
-  for (const c of cham.slice(1).filter(r => r !== forge && chance(0.5))) {
+  for (const c of cham.slice(1).filter(r => r !== forge && r !== handRoom && chance(0.5))) {
     const m = roomMid(c), spots = map.cells((x, y) => x >= c.x && x < c.x + c.w && y >= c.y && y < c.y + c.h && x !== m.x && y !== m.y && ['floor', 'bones'].includes(map.get(x, y)));
     if (spots.length) { const p = pick(spots); map.set(p.x, p.y, 'bonepile'); }
   }
