@@ -533,41 +533,10 @@ function untilJoined(build) {
 }
 // The Ossuary (a side-floor under the crypt, SIDE_LEVELS.ossuary): one big bone warren - 10-14 shaped bone chambers
 // joined by looped passages, two secret rooms behind cracked walls, spiders and webs, loot deep in, and the Bone Colossus
-// oozing about the biggest of the far chambers. map.start: the first chamber (loadLevel puts the way back up there).
+// oozing about the biggest of the far chambers. map.start: the first chamber (loadLevel puts the way back up there). Also: burial niches along the
+// corridors (addNiches), stirring bone heaps (bonepile) and a chamber of crawling hands (addHandRoom) - see the level's `niches` / `stirBones` flags.
 function genOssuary(w, h) { return untilJoined(() => ossuaryOnce(w, h)); }
 function ossuaryOnce(w, h) {
-  const map = new GameMap(w, h), area = { x: 2, y: 2, w: w - 4, h: h - 4 };
-  let cham = [];
-  for (let tries = 0; tries < 10 && cham.length < 10; tries++) cham = ossuaryChambers(area, 14);
-  buildOssuary(map, cham, roomMid);
-  for (let i = 0; i < 2; i++) addSecretRoom(map, cham, roomMid, area);
-  map.start = roomMid(cham[0]);
-  const far = cham.slice(1).sort((a, b) => dist(roomMid(b), map.start) - dist(roomMid(a), map.start)).slice(0, 4)
-    .reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
-  map.spawns.unshift({ ...roomMid(far), monster: 'colossus' }); // first, so it gets its spot (the web spinner may want it)
-  // The bone forge: a chamber (not the entrance, the Colossus's or the web spinner's) knee-deep in bones, no webs, the
-  // forge in the middle building skeletons from them.
-  const big = cham.reduce((a, b) => (b.w * b.h > a.w * a.h ? b : a));
-  const away = cs => { const f = cs.filter(c => dist(roomMid(c), map.start) >= 18); return f.length ? f : cs; }; // set pieces keep clear of the entrance
-  const forge = shuffle(away(cham.slice(1).filter(c => c !== far && c !== big))).sort((a, b) => (b.w >= 5 && b.h >= 5) - (a.w >= 5 && a.h >= 5))[0];
-  if (forge) {
-    const c = roomMid(forge);
-    for (let y = forge.y; y < forge.y + forge.h; y++)
-      for (let x = forge.x; x < forge.x + forge.w; x++) if (['floor', 'bones', 'web'].includes(map.get(x, y))) map.set(x, y, chance(0.55) ? 'bones' : 'floor');
-    map.set(c.x, c.y, 'floor');
-    map.spawns = map.spawns.filter(s => dist(s, c) > 0); // (a crypt spider may have been put there)
-    map.spawns.push({ ...c, monster: 'boneforge' });
-  }
-  const worm = pick(away(cham.slice(1).filter(c => c !== far && c !== forge))); // a bone worm nosing through the bones
-  if (worm) map.spawns.unshift({ ...roomMid(worm), monster: 'boneworm' }); // first, so a native in its chamber can't take its spot
-  map.reserved.push(...cham);
-  return map;
-}
-
-// The Ossuary, copied (EXTRA_FLOORS.ossuarynext): a sandbox to try ideas for making the floor more distinctive - chamber roles,
-// niche corridors, stirring bones, landmark lights, a Colossus tied to the bones - before any of it goes into the real one.
-function genOssuaryNext(w, h) { return untilJoined(() => ossuaryNextOnce(w, h)); }
-function ossuaryNextOnce(w, h) {
   const map = new GameMap(w, h), area = { x: 2, y: 2, w: w - 4, h: h - 4 };
   let cham = [];
   for (let tries = 0; tries < 10 && cham.length < 10; tries++) cham = ossuaryChambers(area, 14);

@@ -213,7 +213,7 @@ function tickEggs(g) {
     }
 }
 
-// Bone heaps (levels with `stirBones`, the Ossuary sandbox): one within 3 tiles of you may start to stir (bonestir: a turn's
+// Bone heaps (levels with `stirBones`: the Ossuary): one within 3 tiles of you may start to stir (bonestir: a turn's
 // warning), and next turn a skeleton clambers out of it. Heaps are placed by the generator (bonepile), so it's a handful per floor.
 function tickBones(g) {
   if (!g.level.stirBones) return;
