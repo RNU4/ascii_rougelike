@@ -363,6 +363,9 @@ function farCentrepiece(map, r, dir, tile) {
   return x - dir; // where its owner stands, before it
 }
 const CRYPT_DOORS = 0.85; // chance each doorway of a chamber-crypt room gets a door
+// Boss rooms (the chamber crypt's mini-boss arenas and the Lich's hall): this size - roomy enough for a fight. The crypt's
+// grid cells (TEST_LEVEL.size) are sized to fit them, the Lich's hall with its stairs vault behind.
+const ARENA = { w: 17, h: 11 };
 const ARENA_BUILDS = {
   // The Death Knight's parade hall: a red carpet up the middle to a throne at the far end, suits of armour down both
   // sides, red banners on the walls. The knight stands before his throne, skeletons at his side.
@@ -407,7 +410,8 @@ const ARENA_BUILDS = {
   serpent(map, r, from, withKey) {
     const c = roomMid(r);
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.set(x, y, 'pitfloor');
-    for (const [dx, dy] of [[-3, -2], [3, -2], [-3, 2], [3, 2]]) map.set(c.x + dx, c.y + dy, 'column');
+    const qx = r.w >> 2, qy = r.h >> 2; // (columns a quarter of the way in from each side, however big the pit)
+    for (const [dx, dy] of [[-qx, -qy], [qx, -qy], [-qx, qy], [qx, qy]]) map.set(c.x + dx, c.y + dy, 'column');
     shuffle(map.cells((x, y) => map.get(x, y) === 'pitfloor' && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h && dist({ x, y }, c) > 1))
       .slice(0, 6).forEach(p => map.set(p.x, p.y, 'shedskin'));
     for (const [x, y] of [[r.x, r.y], [r.x + r.w - 1, r.y], [r.x, r.y + r.h - 1], [r.x + r.w - 1, r.y + r.h - 1]]) edgeProp(map, r, x, y, 'candlestick');
@@ -730,12 +734,12 @@ function genCryptChambers(w, h) {
   shuffle(path.map((_, i) => i).filter(i => i > 0 && i !== trialAt && i !== last))
     .forEach((i, k) => { if (k < roles.length) role[i] = roles[k]; });
   const rooms = path.map((p, i) => i === 0 ? place(p.c, p.r, 9, 7) : i === trialAt ? place(p.c, p.r, 9, 7)
-    : role[i] ? place(p.c, p.r, 11, 7) : place(p.c, p.r, pick([7, 9, 11]), pick([5, 7])));
+    : role[i] ? place(p.c, p.r, ARENA.w, ARENA.h) : place(p.c, p.r, pick([7, 9, 11]), pick([5, 7])));
   // Boss block (11x11): the hall and its stairs vault, the vault on the side the corridor from the previous chamber
   // doesn't come in on (that corridor runs straight toward the hall's middle, so it never crosses the vault).
-  const block = place(path[last].c, path[last].r, 11, 11), up = mid(rooms[last - 1]).y > block.y + 5;
-  const hall = rooms[last] = { x: block.x, y: up ? block.y + 4 : block.y, w: 11, h: 7 };
-  const vault = { x: block.x + 3, y: up ? block.y : block.y + 8, w: 5, h: 3 };
+  const block = place(path[last].c, path[last].r, ARENA.w, ARENA.h + 4), up = mid(rooms[last - 1]).y > block.y + (ARENA.h + 4 >> 1);
+  const hall = rooms[last] = { x: block.x, y: up ? block.y + 4 : block.y, w: ARENA.w, h: ARENA.h };
+  const vault = { x: block.x + (ARENA.w - 5 >> 1), y: up ? block.y : block.y + ARENA.h + 1, w: 5, h: 3 };
   // Side rooms first choose their cells (off path chambers other than the trial and the boss hall). The special ones
   // come first, in this order, while free cells last; then random CRYPT_ROOMS.
   // (the three ways down to the side-floors first, so they always find a cell - genCryptHub rebuilds if one doesn't)
@@ -793,6 +797,7 @@ function genCryptChambers(w, h) {
   map.trial = { r: tr, state: 'ready' };
   // Boss hall: the Lich's sanctum and the stairs vault behind its locked door (furnishLichHall).
   furnishLichHall(map, hall, vault);
+  map.arenas = [];
   // Mini-boss arenas and the flooded crypt (furnished and populated by ARENA_BUILDS; nothing else spawns in them).
   // One of the mini-bosses carries the treasure vault's key, if a vault was built.
   const keyHolder = sides.some(s => s.type.name === 'vault') && pick(Object.keys(role).filter(i => role[i] !== 'flooded'));
@@ -800,7 +805,9 @@ function genCryptChambers(w, h) {
     const rm = rooms[i];
     ARENA_BUILDS[role[i]](map, rm, mid(rooms[i - 1]), i === keyHolder);
     for (let y = rm.y; y < rm.y + rm.h; y++) for (let x = rm.x; x < rm.x + rm.w; x++) map.noSpawn[y][x] = true;
+    if (role[i] !== 'flooded') map.arenas.push({ r: rm, state: 'ready' }); // a boss room: locks behind you (arenaTick)
   }
+  map.arenas.push({ r: hall, state: 'ready' }); // (the Lich's)
   rooms.forEach((rm, i) => i !== trialAt && addDoors(map, rm, CRYPT_DOORS));
   map.reserved.push(...rooms, ...sides.map(s => s.r));
   // Monsters wait in the chambers and rooms, not strung along the corridors between them.

@@ -557,6 +557,7 @@ class Game {
       if (this.turn % 3 === 0 && m.hp < m.maxHp && !this.monsters.some(o => o.alive && this.hostile(m, o) && dist(o, m) <= 8 && this.map.hasLos(m, o))) m.hp++;
     }
     tickBurrowed(this); // burrowed bone worms resurface
+    arenaTick(this); // boss rooms lock while their bosses live
     tickFire(this); tickEggs(this); tickBones(this); tickNiches(this); tickHandRoom(this); // (Silk Hive) burning silk spreads; egg sacs hatch
     tickTimed(this); // skill-made tiles expire; consecrated ground heals / burns
     trialTick(this); // crypt trial chamber: seal, waves, reward

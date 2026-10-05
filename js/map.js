@@ -113,6 +113,7 @@ const TILES = {
   // Trial chamber (crypt): rune walls and floor; every way out turns into a sealed gate while a trial runs (trialTick).
   runewall:  { ch: '#', color: '#b090e0', bg: '#241a33', walk: false, opaque: true, name: 'rune-carved wall' },
   runefloor: { ch: '·', color: '#7a5a9a', walk: true, name: 'runed floor' },
+  portcullis: { ch: '#', color: '#c8d0e0', bg: '#22242c', walk: false, name: 'iron portcullis' }, // boss rooms lock with these (see-through)
   sealed:    { ch: '#', color: '#ff66cc', bg: '#4a1040', walk: false, opaque: true, name: 'sealed gate' },
   runecircle: { ch: '○', color: '#a070e0', walk: true, name: 'summoning circle' },
   sigil:     { ch: '☼', color: '#ff80e0', walk: true, light: 2, lightColor: '255,100,220', name: 'trial sigil' },

@@ -113,6 +113,38 @@ function tickTimed(g) {
 // Trial chamber (map.trial, addTrialChamber): step inside and every way out seals; the level's `trial.waves` rise one by
 // one from the floor (each wave once the last is dead). Clear them all: the seals open and a reward appears. Leave
 // (teleport) mid-trial: the seals fade, no reward. Waves are provoked, so even a Necromancer's kin fight.
+// Seal every way into room r (the walkable / door tiles in its ring) with `gate`; returns what was there, for unsealRoom.
+function sealRoom(g, r, gate) {
+  const sealed = [];
+  for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++) {
+    if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) continue;
+    const t = g.map.get(x, y);
+    if ((TILES[t].walk || TILES[t].door) && !g.occupied(x, y)) { sealed.push({ x, y, was: t }); g.map.set(x, y, gate); }
+  }
+  g.map.computeLights();
+  return sealed;
+}
+const unsealRoom = (g, sealed) => { sealed.forEach(c => g.map.set(c.x, c.y, c.was)); g.map.computeLights(); };
+// Boss rooms (map.arenas, from the generator): step inside and iron portcullises drop over every way in; they lift once
+// every hostile in the room is dead (boss, escort, the Lich's phylactery and raised dead alike) - or if you leave it
+// (a teleport), then it's ready to lock again. Runs every turn from endTurn.
+function arenaTick(g) {
+  const p = g.player;
+  for (const a of g.map.arenas || []) {
+    if (a.state === 'done') continue;
+    const r = a.r, inside = e => e.x >= r.x && e.x < r.x + r.w && e.y >= r.y && e.y < r.y + r.h;
+    if (a.state === 'ready') {
+      if (!inside(p) || g.ghost) continue;
+      a.sealed = sealRoom(g, r, 'portcullis'); a.state = 'locked';
+      g.log('Iron bars slam down behind you - there is no way out but through!', '#c8d0e0');
+      continue;
+    }
+    if (!inside(p)) { unsealRoom(g, a.sealed); a.state = 'ready'; continue; } // (left it some other way)
+    if (g.monsters.some(m => m.alive && inside(m) && g.hostile(m, p) && !m.captive)) continue;
+    unsealRoom(g, a.sealed); a.state = 'done';
+    g.log('The last foe falls. With a grinding of chains, the bars lift.', '#ffd24a');
+  }
+}
 function trialTick(g) {
   const t = g.map.trial, waves = g.level.trial?.waves;
   if (!t || !waves || t.state === 'done') return;
