@@ -492,6 +492,23 @@ const SIDE_BUILDS = {
     map.set(c.x, c.y, 'bonestair');
     addDoors(map, r, CRYPT_DOORS);
   },
+  // The way down to the Goblin Warrens (a side-floor): a dug-out tunnel mouth - trampled dirt, supply crates and barrels
+  // by the walls, a guttering torch, the tunnel in the middle.
+  warrenstair(map, r) {
+    const c = roomMid(r);
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.set(x, y, 'dirt');
+    edgeProp(map, r, r.x, r.y, 'crate'); edgeProp(map, r, r.x + r.w - 1, r.y + r.h - 1, 'barrel');
+    map.set(c.x, c.y, 'warrenstair');
+    addDoors(map, r, CRYPT_DOORS);
+  },
+  // The way down to the Silk Hive (a side-floor): a shaft choked with silk - webbed walls, strands and cobwebs underfoot.
+  hivestair(map, r) {
+    const c = roomMid(r);
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.set(x, y, chance(0.3) ? 'web' : 'silkfloor');
+    wallRing(map, r, 'silkwall');
+    map.set(c.x, c.y, 'hivestair');
+    addDoors(map, r, CRYPT_DOORS);
+  },
   // Goblin war camp: a raiding party holed up on trampled dirt around a campfire - hide tents in the corners with
   // straw bedrolls, crates and barrels of supplies along the walls, gnawed bones, and their plunder. Kept apart from the
   // undead (in the open crypt they'd be mobbed the moment they woke). Nothing else spawns in it.
@@ -572,7 +589,7 @@ function ossuaryOnce(w, h) {
   return map;
 }
 
-// The Silk Hive (EXTRA_FLOORS.hive - its own floor for now): a warren built like the Ossuary but all of silk - 12-18
+// The Silk Hive (SIDE_LEVELS.hive - a side-floor off the boss crypt): a warren built like the Ossuary but all of silk - 12-18
 // shaped chambers walled in webbing (silkwall: fire burns through it, see tickFire), floors strung with silk strands,
 // cobwebs, spiderlings. Cocoons line chamber edges (cut them open: an old adventurer's gear, a spiderling brood or a
 // husk), egg clutches sit in some chambers (they hatch as you come near - tickEggs), two sealed side rooms behind thick
@@ -673,6 +690,18 @@ function genBoneTest(w, h) {
   return placeTorches(map, 4, 4);
 }
 
+// The boss crypt (where a run starts): genCryptChambers, rebuilt (up to 10 times) until all three ways down to the
+// side-floors - the Ossuary, the Goblin Warrens, the Silk Hive - made it in.
+const HUB_STAIRS = ['bonestair', 'warrenstair', 'hivestair'];
+function genCryptHub(w, h) {
+  let map;
+  for (let i = 0; i < 10; i++) {
+    map = genCryptChambers(w, h);
+    if (HUB_STAIRS.every(t => map.cells((x, y) => map.get(x, y) === t).length)) return map;
+  }
+  return map;
+}
+
 // Crypt, chamber layout (test map - debug J): the floor is a grid of cells. A winding chain of chambers (the main path)
 // runs from the start chamber through a trial chamber (midway) to the Lich's hall, whose sealed vault holds the stairs.
 // Path chambers branch off into dead-end special rooms (CRYPT_ROOMS: burial chambers, ossuaries, shrines...).
@@ -709,8 +738,9 @@ function genCryptChambers(w, h) {
   const vault = { x: block.x + 3, y: up ? block.y : block.y + 8, w: 5, h: 3 };
   // Side rooms first choose their cells (off path chambers other than the trial and the boss hall). The special ones
   // come first, in this order, while free cells last; then random CRYPT_ROOMS.
-  const sides = [], queue = [{ name: 'vault', w: 5, h: 3 }, { name: 'camp', w: 9, h: 7 }, { name: 'ossuarystair', w: 5, h: 5 },
-    { name: 'ambush', w: 7, h: 5 }];
+  // (the three ways down to the side-floors first, so they always find a cell - genCryptHub rebuilds if one doesn't)
+  const sides = [], queue = [{ name: 'ossuarystair', w: 5, h: 5 }, { name: 'warrenstair', w: 5, h: 5 }, { name: 'hivestair', w: 5, h: 5 },
+    { name: 'vault', w: 5, h: 3 }, { name: 'camp', w: 9, h: 7 }, { name: 'ambush', w: 7, h: 5 }];
   const extras = CRYPT_ROOMS.filter(t => t.name !== 'ossuary').flatMap(t => Array(t.weight).fill(t)); // (the Ossuary is its own floor now)
   // Hosts: rooms a side branch can hang off - path chambers (not the trial or the boss hall), and then side rooms too
   // (deeper branches), except the vault (one way in).

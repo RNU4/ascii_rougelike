@@ -47,7 +47,8 @@ class Game {
     this.floors = {}; // depth -> saved floor (see changeLevel)
     this.alliesHold = false; this.allyStance = 'aggressive'; // a new game starts with fresh orders
     this.fallen = []; // dead companions (Resurrection)
-    this.side = this.sideBack = this.testLevel = null; // on the main floors
+    this.side = this.sideBack = null;
+    this.testLevel = TEST_LEVEL; this.depth = TEST_LEVEL.depth; // a run starts in the boss crypt (side-floors off it to level up in)
     this.addItem({ ...makeConsumable(CONSUMABLES[0]), count: 2 });
     this.loadLevel();
   }
@@ -82,8 +83,10 @@ class Game {
 
     const p = this.player;
     Object.assign(p, start);
-    if (this.depth > 0) m.set(start.x, start.y, 'upstairs'); // the way back up
-    this.upStairs = this.depth > 0 ? start : null;
+    if (def.noStairs) m.cells((x, y) => m.get(x, y) === 'stairs').forEach(c => m.set(c.x, c.y, 'floor')); // (a side-floor: only the way back up - e.g. the warrens' throne-room stairs go)
+    const up = this.depth > 0 && !def.noUp; // (noUp: where a run starts)
+    if (up) m.set(start.x, start.y, 'upstairs'); // the way back up
+    this.upStairs = up ? start : null;
     this.monsters = [];
     this.items = [];
     this.orb = this.coil = null;

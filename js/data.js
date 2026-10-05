@@ -243,11 +243,11 @@ const LEVELS = [
 
 // Test maps (debug J): a level def loaded in place of the current floor, to try out a new layout before it replaces one.
 const TEST_LEVEL = {
-  ...LEVELS[3], depth: 3, name: 'the Forgotten Crypt (chamber layout test)', size: [100, 45], count: 16, // depth: which floor it stands in for
+  ...LEVELS[3], depth: 3, name: 'the Forgotten Crypt', size: [100, 45], count: 16, // depth: which floor it stands in for
   // (the bigger map would otherwise scale the war bands and hand packs way up; the mini-bosses wait in their arenas)
   groups: [{ monsters: ['hand', 'hand', 'hand', 'hand'], count: 2 }], // (the goblin raiders have their own camp room)
-  gen: (w, h) => placeTorches(decorate(genCryptChambers(w, h), 'bones', 40, 3), 32, 6),
-  chars: { wall: '#' },
+  gen: (w, h) => placeTorches(decorate(genCryptHub(w, h), 'bones', 40, 3), 32, 6),
+  chars: { wall: '#' }, noUp: true, // (a run starts here - no way back up)
   // read on the entrance hall's plaque (TILES.plaque.onBump)
   plaque: 'Here the faithful sleep. Their champions keep the key to the vault; their master keeps the way below. Walk the runes, and earn the favour of the dead.',
 };
@@ -285,15 +285,18 @@ const EXTRA_FLOORS = {
     name: 'Bone heap test room', depth: 3, intro: `Bone heap glyphs, left to right: ${BONE_GLYPHS.join(' ')}. Rows: bare floor, in bone litter, stirring.`,
     gen: (w, h) => genBoneTest(w, h), size: [26, 16], fov: 40, noStairs: true, colors: { floor: '#2e2a24' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
   },
+};
+
+const SIDE_LEVELS = {
+  // The Goblin Warrens (once main floor 1): the chief holds court in his throne room - no stairs on from there now.
+  warrens: { ...LEVELS[1], noStairs: true, depth: 3,
+    intro: 'Dug-out tunnels echo with goblin chatter. Somewhere ahead, the chief holds court on his throne.' },
   hive: {
-    name: 'the Silk Hive', depth: 4, intro: 'Silk everywhere - walls of it, floors of it, shapes wrapped in it. The air ticks with tiny legs. Fire would go through this place like a flood.',
+    name: 'the Silk Hive', depth: 3, noStairs: true, intro: 'Silk everywhere - walls of it, floors of it, shapes wrapped in it. The air ticks with tiny legs. Fire would go through this place like a flood.',
     gen: (w, h) => genHive(w, h), size: [90, 44], fov: 4,
     colors: { floor: '#3e3a30' }, chars: { wall: '#' },
     monsters: ['spiderling', 'spiderling', 'spiderling', 'spider', 'webspinner'], count: 22, items: 6, // (giant spiders: genHive puts them in roomy chambers)
   },
-};
-
-const SIDE_LEVELS = {
   ossuary: {
     name: 'the Ossuary', intro: 'Walls of skulls, drifts of bones, cobwebs thick as curtains. Somewhere in the dark, something vast is shifting.',
     gen: (w, h) => genOssuary(w, h), size: [72, 36], fov: 4, noStairs: true, depth: 3, // (depth: the floor it lies under)
