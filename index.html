@@ -67,6 +67,10 @@
   /* Hatching spiderlings (css hatch): pop out small and grow. A bursting egg sac (float css burst): swells and fades. */
   :is(#map.square, #actors) span.hatch { animation: hatch 0.35s ease-out both; }
   @keyframes hatch { 0% { transform: scale(0.2); opacity: 0.3; } 70% { transform: scale(1.2); opacity: 1; } 100% { transform: none; } }
+  /* A boss's blade sweeping through tiles (slashFx): a bright slash flaring and fading on each, one after another. */
+  #floats span.slash { font-family: "IBM BIOS", Consolas, monospace; font-weight: normal; height: 1em; text-shadow: 0 0 0.25em #ff4040, 0 0 0.5em #ff2020;
+                       animation: slash 0.32s ease-out both; }
+  @keyframes slash { 0% { opacity: 0; transform: scale(0.6); } 30% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0; transform: scale(1); } }
   #floats span.burst { font-family: "IBM BIOS", Consolas, monospace; font-weight: normal; text-shadow: 0 0 0.3em #f4ff90; height: 1em;
                        animation: burst 0.45s ease-out both; }
   @keyframes burst { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }

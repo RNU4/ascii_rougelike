@@ -241,6 +241,16 @@ const inRect = (r, e) => e.x >= r.x && e.x < r.x + r.w && e.y >= r.y && e.y < r.
 // The 3 tiles in front of m toward (dx, dy): straight ahead and the two diagonals beside it.
 const arcToward = (m, dx, dy) => [{ x: dx, y: dy }, { x: Math.sign(dx - dy), y: Math.sign(dx + dy) }, { x: Math.sign(dx + dy), y: Math.sign(dy - dx) }]
   .map(d => ({ x: m.x + d.x, y: m.y + d.y }));
+// A blade sweeping through tiles from m: on each in turn (round from one side to the other) a bright slash across the
+// line of the blow (float css slash) and a red flash - shown whether or not anyone was still standing there.
+function slashFx(g, m, tiles) {
+  const ang = c => Math.atan2(c.y - m.y, c.x - m.x);
+  [...tiles].sort((a, b) => ang(a) - ang(b)).forEach((c, i) => {
+    const dx = Math.sign(c.x - m.x), dy = Math.sign(c.y - m.y); // the slash runs across the blow
+    g.fx.float(c, dx === 0 ? '─' : dy === 0 ? '│' : dx * dy > 0 ? '/' : '\\', '#ffffff', { css: 'slash', delay: i * 0.07 });
+    g.fx.flash(c, '#5a1010');
+  });
+}
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
   // The Death Knight: the executioner's swing - raises his blade over the 3 tiles in front of his foe for a turn (marked),
@@ -273,6 +283,7 @@ const BOSS_PATTERNS = {
       const tiles = m.swing.tiles;
       clearDanger(g, m.swing); m.swing = null; m.swingCd = 4;
       const hit = [g.player, ...g.monsters].filter(e => e.alive && e !== m && !e.partOf && g.hostile(m, e) && tiles.some(c => c.x === e.x && c.y === e.y));
+      slashFx(g, m, tiles);
       if (seen) g.log(hit.length ? "The Death Knight's blade comes crashing down!" : "The Death Knight's blade cleaves empty air.", '#e04040');
       hit.forEach(e => m.attack(e, g, { mult: 2, verb: 'cleave' }));
       return true;
