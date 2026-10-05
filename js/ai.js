@@ -34,25 +34,45 @@ function placeLegs(m, g, dir = { x: 0, y: 0 }, all = false, trail = { x: 0, y: 0
   if (moved) { Object.assign(m, ahead); m.gait = !m.gait; }
   const taken = [], free = c => g.map.walkable(c.x, c.y) && !other(c.x, c.y) && !(c.x === m.x && c.y === m.y) && !taken.some(t => t.x === c.x && t.y === c.y);
   const fwd = c => (c.x - m.x) * dir.x + (c.y - m.y) * dir.y;
-  // legs: a root slot (no `from`) and its foot - the slot growing from it, if that part is alive; else the root is the foot
+  // legs: a root slot (no `from`) and the slots growing out of it, one after another (a chain: root, knees, foot) - as many of them as are alive
+  // from the root out; a leg that's lost its outer part is a shorter leg (the last part alive is its foot)
   const legs = L.map((o, i) => ({ o, i })).filter(({ o }) => o.from === undefined).map(({ o, i }) => {
-    const fi = L.findIndex(f => f.from === i);
-    if (fi >= 0 && !bySlot(i) && bySlot(fi)) bySlot(fi).hp = 0; // a foot whose knee is gone folds too (the leg regrows from the body out)
-    const knee = fi >= 0 && bySlot(fi) ? bySlot(i) : null, foot = knee ? bySlot(fi) : bySlot(i);
-    const fo = knee ? L[fi] : o; // (a leg that's lost its foot is a short leg: the knee part is its foot)
-    return { o, foot, knee, reach: Math.max(Math.abs(fo.dx), Math.abs(fo.dy)), home: { x: m.x + fo.dx, y: m.y + fo.dy }, set: o.dx * o.dy > 0 };
+    const chain = [i];
+    for (let n; (n = L.findIndex(f => f.from === chain.at(-1))) >= 0;) chain.push(n);
+    const segs = []; let gap = false;
+    for (const k of chain) { const q = bySlot(k); if (!q) gap = true; else if (gap) q.hp = 0; else segs.push(q); } // every part beyond a gap folds too (the leg regrows from the body out)
+    const fo = L[chain[segs.length - 1]] || o;
+    return { o, segs, foot: segs.at(-1), knees: segs.slice(0, -1), reach: Math.max(Math.abs(fo.dx), Math.abs(fo.dy)), home: { x: m.x + fo.dx, y: m.y + fo.dy }, set: o.dx * o.dy > 0 };
   }).filter(l => l.foot);
-  const kneeFor = (l, f) => l.knee ? DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => dist(c, f) === 1 && !(c.x === f.x && c.y === f.y) && free(c))
-    .sort((a, b) => Math.hypot(a.x - (m.x + f.x) / 2, a.y - (m.y + f.y) / 2) - Math.hypot(b.x - (m.x + f.x) / 2, b.y - (m.y + f.y) / 2)
-      || dist(a, { x: m.x + Math.sign(l.o.dx), y: m.y + Math.sign(l.o.dy) }) - dist(b, { x: m.x + Math.sign(l.o.dx), y: m.y + Math.sign(l.o.dy) }))[0] : true;
+  // the knees of a leg standing on f: [] (no knee), or the free tiles joining body to foot in a chain (touching the body, each other and the foot), nearest
+  // the leg's straight line - so a long leg is straight at full reach and bends as the body passes over its foot. null: nowhere to put them.
+  const kneesFor = (l, f) => {
+    if (!l.knees.length) return [];
+    const at = (c, x, y) => c.x === x && c.y === y, spots = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy }));
+    if (l.knees.length === 1) {
+      const k = spots.filter(c => dist(c, f) === 1 && !at(c, f.x, f.y) && free(c))
+        .sort((a, b) => Math.hypot(a.x - (m.x + f.x) / 2, a.y - (m.y + f.y) / 2) - Math.hypot(b.x - (m.x + f.x) / 2, b.y - (m.y + f.y) / 2)
+          || dist(a, { x: m.x + Math.sign(l.o.dx), y: m.y + Math.sign(l.o.dy) }) - dist(b, { x: m.x + Math.sign(l.o.dx), y: m.y + Math.sign(l.o.dy) }))[0];
+      return k ? [k] : null;
+    }
+    const on = n => ({ x: m.x + (f.x - m.x) * n / 3, y: m.y + (f.y - m.y) * n / 3 }), i1 = on(1), i2 = on(2); // (two knees: a three-part leg)
+    let best = null;
+    for (const k1 of spots.filter(free)) for (const [dx, dy] of DIRS) {
+      const k2 = { x: k1.x + dx, y: k1.y + dy };
+      if (!free(k2) || at(k2, m.x, m.y) || at(k2, f.x, f.y) || dist(k2, f) !== 1 || at(k1, f.x, f.y)) continue;
+      const cost = Math.hypot(k1.x - i1.x, k1.y - i1.y) + Math.hypot(k2.x - i2.x, k2.y - i2.y);
+      if (!best || cost < best.cost) best = { cost, ks: [k1, k2] };
+    }
+    return best ? best.ks : null;
+  };
   // a new foothold is at the leg's full reach; a planted foot holds bent in too (the body passing close over it)
-  const stands = (l, f, planted) => free(f) && (dist(f, m) === l.reach || (planted && l.knee && dist(f, m) === l.reach - 1)) && kneeFor(l, f);
+  const stands = (l, f, planted) => free(f) && (dist(f, m) === l.reach || (planted && l.knees.length && dist(f, m) === l.reach - 1)) && kneesFor(l, f);
   const place = (l, f) => {
-    const k = kneeFor(l, f);
-    taken.push(f); if (l.knee) taken.push(k);
-    Object.assign(l.foot, { x: f.x, y: f.y }); if (l.knee) Object.assign(l.knee, { x: k.x, y: k.y });
-    const from = l.knee ? k : m;
-    if (l.knee) l.knee.ch = legGlyph({ dx: k.x - m.x, dy: k.y - m.y }, l.o.dy < 0);
+    const ks = kneesFor(l, f);
+    taken.push(f, ...ks);
+    Object.assign(l.foot, { x: f.x, y: f.y });
+    let from = m; // (each part's glyph comes from where it is relative to the joint before it)
+    l.knees.forEach((q, i) => { Object.assign(q, { x: ks[i].x, y: ks[i].y }); q.ch = legGlyph({ dx: ks[i].x - from.x, dy: ks[i].y - from.y }, l.o.dy < 0); from = ks[i]; });
     l.foot.ch = legGlyph({ dx: f.x - from.x, dy: f.y - from.y }, l.o.dy < 0);
   };
   // which feet hold: not re-planting, and (walking) not this set's turn to swing - unless it's fallen behind its slot
@@ -65,7 +85,7 @@ function placeLegs(m, g, dir = { x: 0, y: 0 }, all = false, trail = { x: 0, y: 0
     const best = spots.sort((a, b) => (moved && !all ? fwd(b) - fwd(a) : 0) || dist(a, lead) - dist(b, lead) || dist(a, l.foot) - dist(b, l.foot))[0]
       || (stands(l, l.foot, true) ? l.foot : null);
     if (best) place(l, best);
-    else { l.foot.hp = 0; if (l.knee) l.knee.hp = 0; } // nowhere to stand: the leg folds away
+    else l.segs.forEach(q => { q.hp = 0; }); // nowhere to stand: the leg folds away
   }
 }
 function bodyFrontier(g, m) {
@@ -75,7 +95,9 @@ function bodyFrontier(g, m) {
     const L = BODY_LAYOUTS[m.layout];
     for (const [i, o] of L.entries()) {
       if (parts.some(q => q.slot === i)) continue;
-      const anchor = (o.from !== undefined && parts.find(q => q.slot === o.from)) || m, home = { x: m.x + o.dx, y: m.y + o.dy };
+      const anchor = o.from === undefined ? m : parts.find(q => q.slot === o.from); // (an outer part can only grow from the part before it)
+      if (!anchor) continue;
+      const home = { x: m.x + o.dx, y: m.y + o.dy };
       const c = [...(anchor !== m ? [{ x: 2 * anchor.x - m.x, y: 2 * anchor.y - m.y }] : []), ...legSpots(home, anchor)].find(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y)
         && dist(c, anchor) === 1 && dist(c, m) <= Math.max(Math.abs(o.dx), Math.abs(o.dy)) && (anchor === m || dist(c, m) > dist(anchor, m)));
       if (c) return { ...c, slot: i };
@@ -413,15 +435,23 @@ const AI = {
     if (m.skirmish && chance(0.6)) m.backoff = 2; // (spiders) strike, then scuttle back
   },
   segment() {}, // a Colossus part: its core moves it
-  // Silk weaver (Silk Hive): mends burnt silk (map.unburnt, reweave) within 10 tiles - unless something hostile is
-  // right by it (then it fights). `busy`: runs even with nothing to hunt.
+  // Silk weaver (Silk Hive): mends burnt silk (map.unburnt, reweave) within 10 tiles - and runs from anything hostile within 7 (along real paths,
+  // to whichever neighbouring tile is farthest from it by walking), fighting back only when cornered. `busy`: runs even with nothing to hunt.
   weaver(m, g) {
     const t = m.target;
-    if (t && dist(m, t) <= 2) return AI.chase(m, g);
     const walk = (x, y) => g.map.walkable(x, y), dm = g.map.distanceFrom(m.x, m.y, walk); // (by real paths, round walls)
+    if (t && dist(m, t) <= 7) {
+      const dp = g.map.distanceFrom(t.x, t.y, walk);
+      const away = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy }))
+        .filter(c => walk(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(m.x, m.y, c.x, c.y) && dp[c.y][c.x] > dp[m.y][m.x])
+        .sort((a, b) => dp[b.y][b.x] - dp[a.y][a.x])[0];
+      if (away) return g.moveTo(m, away.x, away.y);
+      if (dist(m, t) === 1) return m.attack(t, g); // cornered
+      return;
+    }
     const h = Object.keys(g.map.unburnt || {}).map(k => { const [x, y] = k.split(',').map(Number); return { x, y }; })
       .filter(c => g.map.get(c.x, c.y) === 'ash' && dm[c.y][c.x] <= 10).sort((a, b) => dm[a.y][a.x] - dm[b.y][b.x])[0];
-    if (!h) return t ? AI.chase(m, g) : AI.wander(m, g);
+    if (!h) return AI.wander(m, g);
     if (dist(h, m) <= 1) return reweave(g, h);
     const dh = g.map.distanceFrom(h.x, h.y, walk), next = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy }))
       .filter(c => walk(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(m.x, m.y, c.x, c.y) && dh[c.y][c.x] < dh[m.y][m.x])

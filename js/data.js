@@ -139,6 +139,11 @@ const MONSTERS = {
   giantspider: { name: 'giant spider', ch: '\u00f6', color: '#d0c090', hp: 30, atk: 6, def: 1, xp: 30, ai: 'multibody', webs: true,
     size: 5, part: 'spiderleg', form: 'rigid', layout: 'spider3', skirmish: true, onHit: { poison: 2 }, pounce: { range: 3, every: 5 },
     remains: 'silkfloor', shedMsg: 'A leg tears off the giant spider!', loot: 'magic' },
+  // Long-legged spider (test room: EXTRA_FLOORS.longspidertest): a giant spider on legs of three parts - root, knee, foot - reaching 3 tiles (layout spider3seg).
+  longspider: { name: 'long-legged spider', ch: '\u00f6', color: '#c8b090', hp: 45, atk: 7, def: 1, xp: 45, ai: 'multibody', webs: true,
+    size: 13, part: 'longleg', form: 'rigid', layout: 'spider3seg', skirmish: true, onHit: { poison: 2 }, pounce: { range: 4, every: 6 },
+    remains: 'silkfloor', shedMsg: 'A leg tears off the long-legged spider!', loot: 'magic' },
+  longleg: { name: 'long-legged spider', ch: '/', color: '#b8a878', hp: 1, atk: 0, def: 1, xp: 0, ai: 'segment', webs: true, corpse: null, pass: true },
   spiderleg: { name: 'giant spider', ch: '/', color: '#b8a878', hp: 1, atk: 0, def: 1, xp: 0, ai: 'segment', webs: true, corpse: null, pass: true },
   silkweaver: { name: 'silk weaver', webs: true, ch: 'S', color: '#e8d088', hp: 12, atk: 3, def: 1, xp: 14, ai: 'weaver', busy: true, alwaysAwake: true }, // mends burnt silk
   spiderling: { name: 'spiderling', webs: true, ch: 's', color: '#e8e0b8', hp: 4, atk: 3, def: 0, xp: 2, ai: 'fast', corpse: null }, // Silk Hive swarms
@@ -255,6 +260,9 @@ const TEST_LEVEL = {
 // stays touching that one. spider3: 4 diagonal legs; spider5: long legs, 2 tiles each (outer half on the inner).
 const BODY_LAYOUTS = {
   spider3: [{ dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 }],
+  spider3seg: [{ dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 }, // four legs of three parts (root, knee, foot)
+    { dx: -2, dy: -2, from: 0 }, { dx: 2, dy: -2, from: 1 }, { dx: -2, dy: 2, from: 2 }, { dx: 2, dy: 2, from: 3 },
+    { dx: -3, dy: -3, from: 4 }, { dx: 3, dy: -3, from: 5 }, { dx: -3, dy: 3, from: 6 }, { dx: 3, dy: 3, from: 7 }],
   spider5: [{ dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: 1, dy: 1 },
     { dx: -2, dy: -2, from: 0 }, { dx: 2, dy: -2, from: 1 }, { dx: -2, dy: 2, from: 2 }, { dx: 2, dy: 2, from: 3 }],
 };
@@ -268,6 +276,10 @@ const EXTRA_FLOORS = {
   spidertest: { // a small arena for trying the giant spiders (genSpiderTest)
     name: 'Spider test room', depth: 4, intro: 'A test room: the Broodmother and a giant spider.', gen: (w, h) => genSpiderTest(w, h),
     size: [44, 22], fov: 40, colors: { floor: '#3e3a30' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
+  },
+  longspidertest: { // a lit hall with the long-legged spider (genLongSpiderTest)
+    name: 'Long-legged spider test room', depth: 4, intro: 'A test room: a spider whose legs have three parts.', gen: (w, h) => genLongSpiderTest(w, h),
+    size: [48, 24], fov: 40, noStairs: true, colors: { floor: '#3e3a30' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
   },
   bonetest: { // bone heap glyph candidates (genBoneTest)
     name: 'Bone heap test room', depth: 3, intro: `Bone heap glyphs, left to right: ${BONE_GLYPHS.join(' ')}. Rows: bare floor, in bone litter, stirring.`,

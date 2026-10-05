@@ -597,7 +597,7 @@ function hiveOnce(w, h) {
       const fx = x + dx, fy = y + dy; return fx >= c.x && fx < c.x + c.w && fy >= c.y && fy < c.y + c.h && map.walkable(fx, fy); })));
     if (wall) map.set(wall.x, wall.y, 'oillamp');
   }
-  shuffle(cham.slice(1).filter(c => c !== lair)).slice(0, 2).forEach(c => map.spawns.push({ ...roomMid(c), monster: 'silkweaver' }));
+  shuffle(cham.slice(1).filter(c => c !== lair)).slice(0, 2).forEach(c => map.spawns.unshift({ ...roomMid(c), monster: 'silkweaver' })); // (first, so a native standing in that chamber can't take its spot)
   // giant spiders (3x3) in the roomiest other chambers
   shuffle(cham.slice(1).filter(c => c !== lair && c.w >= 7 && c.h >= 7)).slice(0, 3).forEach(c => map.spawns.push({ ...roomMid(c), monster: 'giantspider' }));
   // A prop stays only if every chamber is still reachable from the entrance (a passage may cross a chamber off its axes).
@@ -629,6 +629,18 @@ function genSpiderTest(w, h) {
   map.start = { x: 4, y: 10 };
   map.spawns.push({ x: 21, y: 10, monster: 'broodmother' }, { x: 37, y: 10, monster: 'giantspider' });
   return placeTorches(map, 6, 3);
+}
+
+// Long-legged spider test room (EXTRA_FLOORS.longspidertest): a lit hall with a few pillars and a 1-wide corridor out to a side room (to watch the
+// three-part legs fold), you at the west end, the spider in the east half.
+function genLongSpiderTest(w, h) {
+  const map = new GameMap(w, h), hall = { x: 2, y: 3, w: 30, h: 17 }, side = { x: 38, y: 7, w: 8, h: 9 };
+  carveRect(map, hall.x, hall.y, hall.w, hall.h); carveRect(map, side.x, side.y, side.w, side.h);
+  for (let x = hall.x + hall.w; x < side.x; x++) map.set(x, 11, 'floor');
+  for (const [x, y] of [[10, 6], [10, 16], [18, 11], [18, 12], [24, 7], [24, 15]]) map.set(x, y, 'wall');
+  map.start = { x: 4, y: 11 };
+  map.spawns.push({ x: 24, y: 11, monster: 'longspider' });
+  return placeTorches(map, 8, 4);
 }
 
 // Gear test room (EXTRA_FLOORS.geartest): a lit room with every exclusive set piece laid out in rows - the Ossuary's
