@@ -253,6 +253,42 @@ function slashFx(g, m, tiles) {
 }
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
+  // The Wight (its dark tomb): a darkstalker - unseen on unlit tiles unless beside you. While it fights it snuffs a grave
+  // candle every 5 turns (the tomb darkens, and it vanishes into the dark), and every 6 turns an open grave heaves (a
+  // turn's warning) and a ghoul climbs out (4 at most). At half health, grave-cold: its hits may freeze you a turn and it
+  // heals twice what it drains. None of it takes its turn - it keeps hunting you (baseAi chase).
+  wight(m, g) {
+    const arena = g.map.arenas?.find(a => inRect(a.r, m)), seen = (x, y) => g.map.visible[y]?.[x];
+    if (!arena || !m.target) return false;
+    const r = arena.r, here = t => g.map.cells((x, y) => inRect(r, { x, y }) && g.map.get(x, y) === t);
+    if (--m.snuffCd <= 0) {
+      const c = pick(here('candle'));
+      if (c) {
+        g.map.set(c.x, c.y, 'candleout'); g.map.computeLights();
+        if (seen(c.x, c.y)) g.log('A cold breath snuffs out a grave candle - the tomb grows darker.', '#9fc27a');
+      }
+      m.snuffCd = 5;
+    }
+    const stirring = here('gravestir');
+    stirring.forEach(c => {
+      g.map.set(c.x, c.y, 'grave');
+      if (g.occupied(c.x, c.y)) return;
+      g.spawn(MONSTERS.ghoul, c);
+      Object.assign(g.monsters.at(-1), { awake: true, provoked: true, flashCss: { turn: g.turn, css: 'hatch' } });
+      if (seen(c.x, c.y)) g.log('A ghoul claws its way up out of the grave!', '#9fc27a');
+    });
+    if (!stirring.length && --m.graveCd <= 0) {
+      const ghouls = g.monsters.filter(o => o.alive && o.name === MONSTERS.ghoul.name && inRect(r, o)).length;
+      const c = ghouls < 4 && pick(here('grave').filter(c => !g.occupied(c.x, c.y)));
+      if (c) { g.map.set(c.x, c.y, 'gravestir'); if (seen(c.x, c.y)) g.log('The earth in an open grave heaves...', '#e0b070'); }
+      m.graveCd = 6;
+    }
+    if (!m.cold && m.hp <= m.maxHp / 2) {
+      Object.assign(m, { cold: true, chill: 0.35, drain: 2 });
+      if (g.map.visible[m.y]?.[m.x]) g.log("Frost spreads from the Wight - its touch freezes, and it feeds deeper!", '#bfe8ff');
+    }
+    return false;
+  },
   // The Death Knight: the executioner's swing - raises his blade over the 3 tiles in front of his foe for a turn (marked),
   // then cleaves them for double damage (every 4 turns); at half health, "Rise, my guard!" - the suits of armour in his hall
   // wake as animated armour, two at a time every 3 turns (each trembles a turn first; 6 in all, at most 4 standing). His charge and taunt stay (baseAi caster).

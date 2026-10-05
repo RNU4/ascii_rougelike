@@ -76,7 +76,9 @@ const TILES = {
   banner:     { ch: '¶', color: '#e04040', bg: '#26262e', walk: false, opaque: true, name: 'hanging banner' },
   throne:     { ch: 'π', color: '#e8c060', bg: '#3a2a10', walk: false, name: 'bone throne' },
   candlestick: { ch: '¡', color: '#ffe8b0', walk: false, light: 2, lightColor: '255,190,110', name: 'candle' },
-  candle:     { ch: '¡', color: '#c8f0a8', walk: false, light: 2, lightColor: '110,220,110', name: 'grave candle' },
+  candle:     { ch: '¡', color: '#c8f0a8', walk: false, light: 5, lightColor: '110,220,110', name: 'grave candle' },
+  candleout:  { ch: '¡', color: '#4a5a44', walk: false, name: 'snuffed candle' }, // (the Wight's doing)
+  gravestir:  { ch: '∩', color: '#e0b070', bg: '#3a2410', walk: false, css: 'swell', name: 'heaving grave' }, // (a ghoul climbs out next turn)
   grave:      { ch: '∩', color: '#8a7050', bg: '#1a140c', walk: true, name: 'open grave' },
   pew:        { ch: '═', color: '#9a7040', walk: false, name: 'pew' },
   glass:      { ch: '▒', color: '#8a6ad8', bg: '#1a1030', walk: false, opaque: true, name: 'stained glass window' },

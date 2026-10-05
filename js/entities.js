@@ -51,10 +51,11 @@ class Entity {
       if (this === p || target === p) game.log(`${this.subj} ${this.verb('cut')} ${this === p ? 'yourself' : 'itself'} on ${target === p ? 'your' : 'its'} bone spikes for ${thorns}.`, '#e0d4b0');
       this.hurt(thorns, game, target);
     }
-    if (this.drain) this.hp = Math.min(this.maxHp, this.hp + dmg); // drain (leeches): heals by the damage dealt
+    if (this.drain) this.hp = Math.min(this.maxHp, this.hp + dmg * (this.drain === true ? 1 : this.drain)); // drain (leeches, the Wight): heals by the damage dealt (x drain if a number)
     if (this.gearStat('venom') && target.alive) applyStatus(target, 'poison', this.gearStat('venom'), game); // (Broodfang)
     const onHit = status || this.onHit;
     if (target.alive && onHit) for (const [k, n] of Object.entries(onHit)) applyStatus(target, k, n, game);
+    if (target.alive && this.chill && chance(this.chill)) applyStatus(target, 'frozen', 1, game); // chill: a chance its hits freeze you a turn (the Wight's grave-cold)
     return dmg;
   }
 

@@ -385,11 +385,14 @@ const ARENA_BUILDS = {
   wight(map, r, from, withKey) {
     const c = roomMid(r);
     for (let x = r.x + 1; x < r.x + r.w - 1; x += 2) if (x !== c.x) { map.set(x, r.y + 1, 'sarcophagus'); map.set(x, r.y + r.h - 2, 'sarcophagus'); }
-    for (const [x, y] of [[r.x, r.y], [r.x + r.w - 1, r.y], [r.x, r.y + r.h - 1], [r.x + r.w - 1, r.y + r.h - 1]]) edgeProp(map, r, x, y, 'candle');
+    // grave candles in the corners and midway along the end walls - the tomb's only light (the Wight snuffs them)
+    for (const [x, y] of [[r.x, r.y], [r.x + r.w - 1, r.y], [r.x, r.y + r.h - 1], [r.x + r.w - 1, r.y + r.h - 1], [r.x, c.y - 1], [r.x + r.w - 1, c.y + 1]])
+      edgeProp(map, r, x, y, 'candle');
     map.dark.push({ x: r.x - 1, y: r.y - 1, w: r.w + 2, h: r.h + 2 });
     wallRing(map, r, 'tombwall');
     spawnAt(map, c.x, c.y, 'wight', withKey && { drops: 'vaultkey' });
     for (const dx of [-2, 2]) { map.set(c.x + dx, c.y, 'grave'); spawnAt(map, c.x + dx, c.y, 'ghoul'); }
+    for (const dx of [-6, 6]) map.set(c.x + dx, c.y, 'grave'); // (two more, empty for now - ghouls climb out mid-fight)
   },
   // The Banshee's chapel: pews either side of a central aisle, stained-glass windows along the walls, an altar at the
   // far end with the Banshee before it. A lone brazier by the door is the only warm light - she keeps to the dark.
