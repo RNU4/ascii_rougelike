@@ -94,8 +94,10 @@ const MONSTERS = {
   bowman:   { name: 'bone archer', ch: 'k', color: '#ddb', hp: 10, atk: 6, def: 1, xp: 11, ai: 'ranged', range: 6, faction: 'undead' },
   ghoul:    { name: 'ghoul', ch: 'u', color: '#7a6', hp: 12, atk: 6, def: 1, xp: 12, ai: 'fast', faction: 'undead' },
   // Mini-bosses. Death Knight: charges you down from close range and taunts your companions onto itself.
-  deathknight: { name: 'Death Knight', ch: 'K', color: '#8a9ab8', hp: 40, atk: 9, def: 4, xp: 35, ai: 'caster', faction: 'undead',
+  deathknight: { name: 'Death Knight', ch: 'K', color: '#8a9ab8', hp: 40, atk: 9, def: 4, xp: 35, ai: 'boss', pattern: 'deathknight', baseAi: 'caster', faction: 'undead',
     skills: ['charge', 'taunt'], skillRange: { charge: 3 }, loot: 'magic' }, // skillRange: shorter reach than the Warrior's
+  // Animated armour (the Death Knight's guard): a suit of armour from his hall, woken when he's brought to half health.
+  animatedarmour: { name: 'animated armour', ch: 'Ω', color: '#b0bcd4', hp: 18, atk: 6, def: 4, xp: 12, ai: 'slow', faction: 'undead', corpse: null },
   // Grave Serpent (crypt mini-boss, its own pit): a long chain-form multibody (see Bone Colossus). fang: a special bite
   // every `every` turns - `mult` x damage plus `status`.
   graveserpent: { name: 'Grave Serpent', ch: '♦', color: '#9fd07a', hp: 60, atk: 8, def: 2, xp: 45, ai: 'multibody', faction: 'undead',

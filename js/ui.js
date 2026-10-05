@@ -119,6 +119,8 @@ Object.assign(Game.prototype, {
       if (pieces.some(q => map.visible[q.y][q.x])) pieces.forEach(q => map.hasLos(p, q) && bodyShown.add(q.x + ',' + q.y));
     }
 
+    const danger = new Set((map.dangers || []).filter(d => d.owner.alive).flatMap(d => d.tiles.map(c => c.x + ',' + c.y))); // (boss telegraphs)
+
     const tgt = this.aim, aimOk = tgt && this.aimOk();
     const path = new Set(tgt ? line(p.x, p.y, tgt.x, tgt.y).slice(1, -1).map(c => c.x + ',' + c.y) : []);
 
@@ -171,7 +173,7 @@ Object.assign(Game.prototype, {
         const look = g === p && this.gearLook ? heroGearLook(p) : null; // (option: your gear shows on your tile)
         if (actor) { actors.push({ e: g.status ? g : p, ch: g.ch, color: g.color, bg: ebg,
           cls: (scss || '') + (hp ? ' hurt' : '') + (look?.cls ? ' ' + look.cls : ''), hpVars, overlay: look?.html, x, y }); ch = ' '; } // cross -> keyed by you
-        const join = /[─-╿]/.test(ch), tcss = vis && TILES[t].css ? TILES[t].css + ' ' : ''; // tile animation (swelling vent)
+        const join = /[─-╿]/.test(ch), tcss = (vis && TILES[t].css ? TILES[t].css + ' ' : '') + (vis && danger.has(k) ? 'danger ' : ''); // tile animation (swelling vent); a boss's marked tiles
         const cls = (vis ? '' : 'dim ') +(join ? 'join ' : '') + tcss + (!actor && scss || '') + (!actor && hp ? ' hurt' : '') + (!actor && look?.cls ? ' ' + look.cls : ''); // join: box-drawing glyphs
         html += `<span${cls ? ` class="${cls.trim()}"` : ''} style="color:${color}${bg ? ';background:' + bg : ''}${actor ? '' : hpVars}">${join ? `<i>${ch}</i>` : ch}${!actor && look ? look.html : ''}</span>`;
       }

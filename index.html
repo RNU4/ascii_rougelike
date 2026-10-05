@@ -82,6 +82,9 @@
   :is(#map.square, #actors) span.set-bone { --setc: #e8dcb0; animation: setglow 2.4s ease-in-out infinite alternate; }
   :is(#map.square, #actors) span.set-silk { --setc: #c8b8ff; animation: setglow 3s ease-in-out infinite alternate; }
   @keyframes setglow { from { box-shadow: inset 0 0 0.02em transparent; } to { box-shadow: inset 0 0 0.14em var(--setc); } }
+  /* A boss's telegraph (map.dangers): the tiles about to be struck pulse red - step out. */
+  #map.square span.danger { animation: danger 0.45s ease-in-out infinite alternate; }
+  @keyframes danger { from { box-shadow: inset 0 0 0 0.06em #ff3030; } to { box-shadow: inset 0 0 0 0.12em #ff5050, inset 0 0 0.5em #ff303099; } }
   :is(#map.square, #actors) span.shieldhit { animation: shieldhit 0.7s ease-out; }
   @keyframes shieldhit { 0% { color: #fff; box-shadow: inset 0 0 0 0.45em #6cf, 0 0 0.5em #6cf; }
                          100% { box-shadow: inset 0 0 0 1px rgba(102, 204, 255, 0), 0 0 0 rgba(102, 204, 255, 0); } }

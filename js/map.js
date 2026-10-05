@@ -57,6 +57,7 @@ const TILES = {
   ironwall:   { ch: '#', color: '#8fa4c8', bg: '#1c2638', walk: false, opaque: true, name: 'iron-bound wall' },
   tombwall:   { ch: '#', color: '#5f8a5a', bg: '#121a12', walk: false, opaque: true, name: 'mossy tomb wall' },
   chapelwall: { ch: '#', color: '#cfc6ac', bg: '#2e2a22', walk: false, opaque: true, name: 'limestone wall' },
+  armourstir: { ch: 'Ω', color: '#e8eeff', walk: false, css: 'swell', name: 'trembling armour' }, // (about to step down - the Death Knight's guard)
   armour:     { ch: 'Ω', color: '#9aa8c0', walk: false, name: 'suit of armour' },
   // Flooded crypt: wading costs a turn (slow, like mud - swimmers glide through); the flagstone causeway doesn't.
   lichwall:   { ch: '#', color: '#8a6ab0', bg: '#140c1e', walk: false, opaque: true, name: 'black stone wall' },

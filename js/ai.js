@@ -232,6 +232,61 @@ function tickBurrowed(g) {
   }
 }
 
+// ---- boss fight patterns ----
+// Danger marks (map.dangers: [{ owner, tiles }]): tiles about to be struck, drawn pulsing red (renderMap) while their
+// owner lives - a turn's warning to step out. markDanger returns the mark, to clear once it's resolved.
+function markDanger(g, owner, tiles) { const d = { owner, tiles }; (g.map.dangers ||= []).push(d); return d; }
+const clearDanger = (g, d) => { g.map.dangers = (g.map.dangers || []).filter(o => o !== d); };
+const inRect = (r, e) => e.x >= r.x && e.x < r.x + r.w && e.y >= r.y && e.y < r.y + r.h;
+// The 3 tiles in front of m toward (dx, dy): straight ahead and the two diagonals beside it.
+const arcToward = (m, dx, dy) => [{ x: dx, y: dy }, { x: Math.sign(dx - dy), y: Math.sign(dx + dy) }, { x: Math.sign(dx + dy), y: Math.sign(dy - dx) }]
+  .map(d => ({ x: m.x + d.x, y: m.y + d.y }));
+// Each returns true if it used the boss's turn.
+const BOSS_PATTERNS = {
+  // The Death Knight: the executioner's swing - raises his blade over the 3 tiles in front of his foe for a turn (marked),
+  // then cleaves them for double damage (every 4 turns); at half health, "Rise, my guard!" - the suits of armour in his hall
+  // wake as animated armour, two at a time every 3 turns (each trembles a turn first; 6 in all, at most 4 standing). His charge and taunt stay (baseAi caster).
+  deathknight(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x], arena = g.map.arenas?.find(a => inRect(a.r, m));
+    if (m.rallied && arena) { // (the guard rises whatever else he does this turn)
+      const r = arena.r, stirring = g.map.cells((x, y) => inRect(r, { x, y }) && g.map.get(x, y) === 'armourstir');
+      stirring.forEach(c => {
+        g.map.set(c.x, c.y, 'floor');
+        g.spawn(MONSTERS.animatedarmour, c);
+        Object.assign(g.monsters.at(-1), { awake: true, provoked: true, flashCss: { turn: g.turn, css: 'hatch' } });
+      });
+      if (stirring.length && seen) g.log('The suits of armour step down from their stands!', '#b0bcd4');
+      const standing = g.monsters.filter(o => o.alive && o.name === MONSTERS.animatedarmour.name).length;
+      if (!stirring.length && --m.rallyCd <= 0 && (m.woken || 0) < 6 && standing < 4) { // (6 in all, 4 up at once at most)
+        const wake = shuffle(g.map.cells((x, y) => inRect(r, { x, y }) && g.map.get(x, y) === 'armour')).slice(0, Math.min(2, 6 - (m.woken || 0)));
+        m.woken = (m.woken || 0) + wake.length;
+        wake.forEach(c => g.map.set(c.x, c.y, 'armourstir'));
+        if (wake.length && seen) g.log('Two suits of armour shudder on their stands...', '#b0bcd4');
+        m.rallyCd = 3;
+      }
+    }
+    if (!m.rallied && m.hp <= m.maxHp / 2) {
+      Object.assign(m, { rallied: true, rallyCd: 0 });
+      if (seen) g.log('The Death Knight bellows: "Rise, my guard!"', '#e04040');
+    }
+    if (m.swing) { // the blow lands - on whoever is still in the marked tiles
+      const tiles = m.swing.tiles;
+      clearDanger(g, m.swing); m.swing = null; m.swingCd = 4;
+      const hit = [g.player, ...g.monsters].filter(e => e.alive && e !== m && !e.partOf && g.hostile(m, e) && tiles.some(c => c.x === e.x && c.y === e.y));
+      if (seen) g.log(hit.length ? "The Death Knight's blade comes crashing down!" : "The Death Knight's blade cleaves empty air.", '#e04040');
+      hit.forEach(e => m.attack(e, g, { mult: 2, verb: 'cleave' }));
+      return true;
+    }
+    if (m.swingCd > 0) m.swingCd--;
+    if (t && dist(m, t) === 1 && !m.swingCd && !isDisabled(m)) { // wind up
+      m.swing = markDanger(g, m, arcToward(m, Math.sign(t.x - m.x), Math.sign(t.y - m.y)).filter(c => g.map.walkable(c.x, c.y)));
+      if (seen) g.log('The Death Knight raises his blade high - get clear!', '#e04040');
+      return true;
+    }
+    return false;
+  },
+};
+
 // Monster behaviours, keyed by the `ai` field in MONSTERS. Behaviours compose each other.
 // m.target is chosen each turn by Game.pickTarget: the player, an ally, or a monster of a rival faction.
 const AI = {
@@ -322,6 +377,11 @@ const AI = {
   // Enemy spellcasters (e.g. goblin shaman): cast from their template `skills` with the same priorities as companions
   // (aiCast: heals, party buffs, then attacks; real cooldowns, INT scaling). Silence stops all casting. `kite`: backs
   // away from targets within 2. Otherwise fights like AI.chase.
+  // A boss (monster `pattern`): its fight pattern (BOSS_PATTERNS) runs first and may take the turn; otherwise it fights
+  // as its `baseAi`.
+  boss(m, g) {
+    if (!BOSS_PATTERNS[m.pattern]?.(m, g)) AI[m.baseAi](m, g);
+  },
   caster(m, g) {
     const t = m.target;
     if (!m.status.silenced && aiCast(g, m, t)) return;
