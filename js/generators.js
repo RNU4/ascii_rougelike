@@ -704,12 +704,16 @@ function genBoneTest(w, h) {
 
 // The boss crypt (where a run starts): genCryptChambers, rebuilt (up to 10 times) until all three ways down to the
 // side-floors - the Ossuary, the Goblin Warrens, the Silk Hive - made it in.
-const HUB_STAIRS = ['bonestair', 'warrenstair', 'hivestair'];
+const HUB_STAIRS = ['bonestair', 'warrenstair', 'hivestair'], HUB_STAIRS_ROOMS = ['ossuarystair', 'warrenstair', 'hivestair'];
+// ...and until at least one of them can be reached from the start without going through a boss room (its tiles or ring).
 function genCryptHub(w, h) {
   let map;
   for (let i = 0; i < 10; i++) {
     map = genCryptChambers(w, h);
-    if (HUB_STAIRS.every(t => map.cells((x, y) => map.get(x, y) === t).length)) return map;
+    const gated = (x, y) => map.arenas.some(a => x >= a.r.x - 1 && x <= a.r.x + a.r.w && y >= a.r.y - 1 && y <= a.r.y + a.r.h);
+    const d = map.distanceFrom(map.start.x, map.start.y, (x, y) => (map.walkable(x, y) || !!TILES[map.get(x, y)].door) && !gated(x, y));
+    const stairs = HUB_STAIRS.map(t => map.cells((x, y) => map.get(x, y) === t));
+    if (stairs.every(c => c.length) && stairs.some(c => c.some(p => d[p.y][p.x] < Infinity))) return map;
   }
   return map;
 }
@@ -738,8 +742,12 @@ function genCryptChambers(w, h) {
   const trialAt = path.length >> 1, last = path.length - 1;
   // Main-path roles: the four mini-boss arenas, in random order along the path (a short path leaves a random one out).
   const role = {}, roles = shuffle(['deathknight', 'wight', 'banshee', 'serpent']); // (the flooded crypt, ARENA_BUILDS.flooded, is left out for now)
-  shuffle(path.map((_, i) => i).filter(i => i > 0 && i !== trialAt && i !== last))
-    .forEach((i, k) => { if (k < roles.length) role[i] = roles[k]; });
+  const slots = shuffle(path.map((_, i) => i).filter(i => i > 0 && i !== trialAt && i !== last));
+  if (slots.length > roles.length) slots.push(...slots.splice(slots.indexOf(1), 1)); // (the chamber after the start stays plain if it can)
+  slots.forEach((i, k) => { if (k < roles.length) role[i] = roles[k]; });
+  // The first gate: the first boss arena or the trial chamber along the path - a way down to a side-floor must hang off
+  // something before it, so a new run always has somewhere to level up first.
+  const firstGate = Math.min(trialAt, ...Object.keys(role).map(Number));
   const rooms = path.map((p, i) => i === 0 ? place(p.c, p.r, 9, 7) : i === trialAt ? place(p.c, p.r, 9, 7)
     : role[i] ? place(p.c, p.r, ARENA.w, ARENA.h) : place(p.c, p.r, pick([7, 9, 11]), pick([5, 7])));
   // Boss block (11x11): the hall and its stairs vault, the vault on the side the corridor from the previous chamber
@@ -755,7 +763,8 @@ function genCryptChambers(w, h) {
   const extras = CRYPT_ROOMS.filter(t => t.name !== 'ossuary').flatMap(t => Array(t.weight).fill(t)); // (the Ossuary is its own floor now)
   // Hosts: rooms a side branch can hang off - path chambers (not the trial or the boss hall), and then side rooms too
   // (deeper branches), except the vault (one way in).
-  const hosts = path.map((cell, i) => ({ cell, room: rooms[i] })).filter((h, i) => i !== trialAt && i !== last);
+  // early: before the first gate; arena: a boss room (or behind one) - no way down hangs off those.
+  const hosts = path.map((cell, i) => ({ cell, room: rooms[i], early: i < firstGate, arena: !!role[i] })).filter((h, i) => i !== trialAt && i !== last);
   const freeNext = h => shuffle(DIRS.slice(0, 4)).map(([dx, dy]) => ({ c: h.cell.c + dx, r: h.cell.r + dy })).find(q => inGrid(q.c, q.r) && !used.has(key(q.c, q.r)));
   // Each special in turn goes off any host that still has a free cell beside it (a host may take several); then each
   // path chamber may get one random extra room.
@@ -765,9 +774,14 @@ function genCryptChambers(w, h) {
     used.add(key(n.c, n.r));
     const s = { from: host.room, type: t, r: place(n.c, n.r, t.w, t.h) };
     sides.push(s);
-    if (t.name !== 'vault') hosts.push({ cell: n, room: s.r, side: true });
+    if (t.name !== 'vault') hosts.push({ cell: n, room: s.r, side: true, early: host.early, arena: host.arena });
   };
-  for (const t of queue) { const h = shuffle([...hosts]).find(freeNext); if (h) addSide(h, t); }
+  const earlyStair = pick(HUB_STAIRS_ROOMS); // (one of the three, at random, always before the first gate)
+  for (const t of queue) {
+    const fits = h => freeNext(h) && (!HUB_STAIRS_ROOMS.includes(t.name) || !h.arena) && (t.name !== earlyStair || h.early);
+    const h = shuffle([...hosts]).find(fits);
+    if (h) addSide(h, t);
+  }
   shuffle(hosts.filter(h => !h.side)).forEach(h => chance(0.6) && addSide(h, pick(extras)));
   rooms.slice(1).forEach((rm, i) => corridor(rooms[i], rm));
   sides.forEach(s => s.type.name !== 'vault' && corridor(s.from, s.r)); // (the vault digs its own, to its door)
