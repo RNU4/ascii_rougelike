@@ -2,6 +2,7 @@
 const DEFAULT_SIZE = [96, 48]; // floor size unless a level sets `size`
 const VIEW_ROWS = 23;   // visible rows (zoom level); columns adapt to the window's width
 const ENEMY_MIN_CD = 3; // enemy casters (no mana): shortest recharge of any skill (runSkill)
+const SPAWN_TILES = 8; // random monsters: at most one per this many spawnable tiles (loadLevel)
 
 const MOVES = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -103,18 +104,21 @@ class Game {
     const free = (near = null, dark = false) => {
       const ok = reach.filter(c => !this.occupied(c.x, c.y) && !this.itemAt(c.x, c.y) && !['stairs', 'upstairs'].includes(this.map.get(c.x, c.y))
         && (near ? dist(c, near) <= 2 : d[c.y][c.x] > 6) && !inReserved(c) && !(dark && this.map.isLit(c.x, c.y)));
-      return pick(ok.length ? ok : reach);
+      return pick(ok.length ? ok : reach.filter(c => !this.occupied(c.x, c.y))) || pick(reach); // (never onto someone if it can help it)
     };
+    // Random monsters (war bands + the rest) get at most one per SPAWN_TILES spawnable tiles: a floor mostly given over to
+    // boss rooms, halls and corridors (the boss crypt) only fills its few open rooms this far, not wall to wall.
+    let budget = Math.floor(floors.length / SPAWN_TILES);
     this.placeFollowers(followers);
     if (def.boss) this.spawn(MONSTERS[def.boss], m.bossSpot && !this.occupied(m.bossSpot.x, m.bossSpot.y) ? m.bossSpot : free(far));
     for (const grp of def.groups || []) // war bands etc.: members spawn together
-      for (let i = 0; i < scaled(grp.count, w, h); i++) {
+      for (let i = 0; i < scaled(grp.count, w, h) && budget >= grp.monsters.length; i++) {
         const at = free();
-        grp.monsters.forEach(k => this.spawn(MONSTERS[k], free(at)));
+        grp.monsters.forEach(k => { const c = free(at); if (!this.occupied(c.x, c.y)) { this.spawn(MONSTERS[k], c); budget--; } });
       }
-    for (let i = 0; i < scaled(def.count, w, h); i++) {
-      const t = MONSTERS[pick(def.monsters)];
-      this.spawn(t, free(null, t.shunLight));
+    for (let i = 0; i < scaled(def.count, w, h) && budget > 0; i++) {
+      const t = MONSTERS[pick(def.monsters)], c = free(null, t.shunLight);
+      if (!this.occupied(c.x, c.y)) { this.spawn(t, c); budget--; }
     }
     for (const s of this.map.spawns) {
       const t = s.template || MONSTERS[s.monster];
