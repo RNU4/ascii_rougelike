@@ -718,13 +718,15 @@ function genCryptHub(w, h) {
 // runs from the start chamber through a trial chamber (midway) to the Lich's hall, whose sealed vault holds the stairs.
 // Path chambers branch off into dead-end special rooms (CRYPT_ROOMS: burial chambers, ossuaries, shrines...).
 function genCryptChambers(w, h) {
-  const C = 5, R = 3, cw = Math.floor((w - 2) / C), chh = Math.floor((h - 2) / R);
+  // a 6x4 grid: the main path takes 9-11 cells (so a few plain chambers sit between the special ones), the rest fill
+  // with side rooms
+  const C = 6, R = 4, cw = Math.floor((w - 2) / C), chh = Math.floor((h - 2) / R);
   const key = (c, r) => c + ',' + r, inGrid = (c, r) => c >= 0 && r >= 0 && c < C && r < R;
   let path = [];
-  for (let tries = 0; tries < 200 && path.length < 7; tries++) { // a random self-avoiding walk over the grid
+  for (let tries = 0; tries < 200 && path.length < 9; tries++) { // a random self-avoiding walk over the grid
     path = [{ c: rand(0, C - 1), r: rand(0, R - 1) }];
     const used = new Set([key(path[0].c, path[0].r)]);
-    for (let n; path.length < 8 && (n = shuffle(DIRS.slice(0, 4)).map(([dx, dy]) => ({ c: path.at(-1).c + dx, r: path.at(-1).r + dy }))
+    for (let n; path.length < 11 && (n = shuffle(DIRS.slice(0, 4)).map(([dx, dy]) => ({ c: path.at(-1).c + dx, r: path.at(-1).r + dy }))
       .find(p => inGrid(p.c, p.r) && !used.has(key(p.c, p.r))));) { path.push(n); used.add(key(n.c, n.r)); }
   }
   const map = new GameMap(w, h);
@@ -758,8 +760,8 @@ function genCryptChambers(w, h) {
   // (deeper branches), except the vault (one way in).
   const hosts = path.map((cell, i) => ({ cell, room: rooms[i] })).filter((h, i) => i !== trialAt && i !== last);
   const freeNext = h => shuffle(DIRS.slice(0, 4)).map(([dx, dy]) => ({ c: h.cell.c + dx, r: h.cell.r + dy })).find(q => inGrid(q.c, q.r) && !used.has(key(q.c, q.r)));
-  // Each special in turn goes off any host that still has a free cell beside it (a host may take several); then each
-  // path chamber may get one random extra room.
+  // Each special in turn goes off any host that still has a free cell beside it (a host may take several); then every
+  // free cell left gets a random extra room.
   const addSide = (host, t) => {
     const n = freeNext(host);
     if (!n) return;
@@ -769,7 +771,9 @@ function genCryptChambers(w, h) {
     if (t.name !== 'vault') hosts.push({ cell: n, room: s.r, side: true });
   };
   for (const t of queue) { const h = shuffle([...hosts]).find(freeNext); if (h) addSide(h, t); }
-  shuffle(hosts.filter(h => !h.side)).forEach(h => chance(0.6) && addSide(h, pick(extras)));
+  // ...then ordinary rooms (CRYPT_ROOMS) in every cell left, off any chamber or room beside it (somewhere for the
+  // crypt's rank and file to be, besides the boss rooms and halls)
+  for (let added = true; added;) { added = false; for (const h of shuffle([...hosts])) if (freeNext(h)) { addSide(h, pick(extras)); added = true; } }
   rooms.slice(1).forEach((rm, i) => corridor(rooms[i], rm));
   sides.forEach(s => s.type.name !== 'vault' && corridor(s.from, s.r)); // (the vault digs its own, to its door)
   rooms.forEach((rm, i) => carveRect(map, rm.x, rm.y, rm.w, rm.h, i === trialAt ? 'runefloor' : 'floor'));
