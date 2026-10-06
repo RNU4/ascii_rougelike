@@ -256,7 +256,8 @@ const BOSS_PATTERNS = {
   // The Wight (its dark tomb): a darkstalker - unseen on unlit tiles unless beside you. While it fights it snuffs a grave
   // candle every 5 turns (the tomb darkens, and it vanishes into the dark), and every 6 turns an open grave heaves (a
   // turn's warning) and a ghoul climbs out (4 at most). At half health, grave-cold: its hits may freeze you a turn and it
-  // heals twice what it drains. None of it takes its turn - it keeps hunting you (baseAi chase).
+  // heals twice what it drains. It stalks: after each strike it backs off 2 turns into the dark, and a strike out of hiding
+  // is a lunge (x1.5); otherwise it closes in as baseAi chase.
   wight(m, g) {
     const arena = g.map.arenas?.find(a => inRect(a.r, m)), seen = (x, y) => g.map.visible[y]?.[x];
     if (!arena || !m.target) return false;
@@ -287,6 +288,26 @@ const BOSS_PATTERNS = {
       Object.assign(m, { cold: true, chill: 0.35, drain: 2 });
       if (g.map.visible[m.y]?.[m.x]) g.log("Frost spreads from the Wight - its touch freezes, and it feeds deeper!", '#bfe8ff');
     }
+    // It stalks rather than trades blows: strike, then melt back for 2 turns (onto unlit tiles, away from you), then come
+    // again - a strike out of hiding (it was unseen as it closed in) is a lunge, x1.5.
+    const t = m.target, shown = () => g.map.visible[m.y]?.[m.x];
+    if (dist(m, t) === 1 && !m.fading) {
+      if (m.lunge && shown()) g.log('The Wight lunges out of the darkness!', '#9fc27a');
+      m.attack(t, g, { mult: m.lunge ? 1.5 : 1 });
+      Object.assign(m, { lunge: false, fading: 2 });
+      return true;
+    }
+    if (m.fading > 0) {
+      m.fading--;
+      const c = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(m.x, m.y, c.x, c.y) && inRect(r, c))
+        .sort((a, b) => g.map.isLit(a.x, a.y) - g.map.isLit(b.x, b.y) || dist(b, t) - dist(a, t))[0];
+      if (c && dist(c, t) >= dist(m, t)) {
+        g.moveTo(m, c.x, c.y);
+        if (shown() && !m.fading) g.log('The Wight melts back into the darkness.', '#9fc27a');
+      }
+      return true;
+    }
+    if (g.submerged(m)) m.lunge = true; // (closing in unseen)
     return false;
   },
   // The Death Knight: the executioner's swing - raises his blade over the 3 tiles in front of his foe for a turn (marked),
