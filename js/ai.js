@@ -253,23 +253,24 @@ function slashFx(g, m, tiles) {
 }
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
-  // The Wight (its dark tomb): a darkstalker - unseen on unlit tiles unless beside you. While it fights it snuffs a grave
-  // candle every 5 turns (the tomb darkens, and it vanishes into the dark), and every 6 turns an open grave heaves (a
-  // turn's warning) and a ghoul climbs out (4 at most). At half health, grave-cold: its hits may freeze you a turn and it
-  // heals twice what it drains. It stalks: after each strike it backs off 2 turns into the dark, and a strike out of hiding
-  // is a lunge (x1.5); otherwise it closes in as baseAi chase.
+  // The Wight (its dark tomb) - a fight over the light. Shrouded on unlit tiles: it regenerates 3 HP a turn and heals by
+  // the damage it deals, and past 2 tiles away only its eyes show (darkstalker 2). Exposed in candlelight: no healing,
+  // and it takes x1.5 damage (lightWeak, Entity.hurt). Every ~6 turns it goes for the nearest lit candle and reaches for it
+  // - a turn's warning; hit it then and it recoils and the candle survives, else the candle goes out and an open grave
+  // heaves (a ghoul climbs out next turn, 4 at most). You relight a snuffed candle by walking into it (a turn). At half
+  // health "the tomb goes cold": a gust snuffs half the lit candles and every grave heaves; grave-cold from then on (its
+  // hits may freeze you, it heals double). Otherwise it fights you as baseAi chase.
   wight(m, g) {
     const arena = g.map.arenas?.find(a => inRect(a.r, m)), seen = (x, y) => g.map.visible[y]?.[x];
     if (!arena || !m.target) return false;
     const r = arena.r, here = t => g.map.cells((x, y) => inRect(r, { x, y }) && g.map.get(x, y) === t);
-    if (--m.snuffCd <= 0) {
-      const c = pick(here('candle'));
-      if (c) {
-        g.map.set(c.x, c.y, 'candleout'); g.map.computeLights();
-        if (seen(c.x, c.y)) g.log('A cold breath snuffs out a grave candle - the tomb grows darker.', '#9fc27a');
-      }
-      m.snuffCd = 5;
-    }
+    const shrouded = !g.map.isLit(m.x, m.y), halved = !m.cold && m.hp <= m.maxHp / 2; // (checked before it regenerates)
+    m.drain = shrouded ? (m.cold ? 2 : true) : 0;
+    if (shrouded && m.hp < m.maxHp) m.hp = Math.min(m.maxHp, m.hp + 3);
+    const heave = c => { // an open grave stirs; a ghoul climbs out of it next turn
+      const ghouls = g.monsters.filter(o => o.alive && o.name === MONSTERS.ghoul.name && inRect(r, o)).length + here('gravestir').length;
+      if (ghouls < 4 && c && !g.occupied(c.x, c.y)) g.map.set(c.x, c.y, 'gravestir');
+    };
     const stirring = here('gravestir');
     stirring.forEach(c => {
       g.map.set(c.x, c.y, 'grave');
@@ -278,36 +279,45 @@ const BOSS_PATTERNS = {
       Object.assign(g.monsters.at(-1), { awake: true, provoked: true, flashCss: { turn: g.turn, css: 'hatch' } });
       if (seen(c.x, c.y)) g.log('A ghoul claws its way up out of the grave!', '#9fc27a');
     });
-    if (!stirring.length && --m.graveCd <= 0) {
-      const ghouls = g.monsters.filter(o => o.alive && o.name === MONSTERS.ghoul.name && inRect(r, o)).length;
-      const c = ghouls < 4 && pick(here('grave').filter(c => !g.occupied(c.x, c.y)));
-      if (c) { g.map.set(c.x, c.y, 'gravestir'); if (seen(c.x, c.y)) g.log('The earth in an open grave heaves...', '#e0b070'); }
-      m.graveCd = 6;
-    }
-    if (!m.cold && m.hp <= m.maxHp / 2) {
-      Object.assign(m, { cold: true, chill: 0.35, drain: 2 });
-      if (g.map.visible[m.y]?.[m.x]) g.log("Frost spreads from the Wight - its touch freezes, and it feeds deeper!", '#bfe8ff');
-    }
-    // It stalks rather than trades blows: strike, then melt back for 2 turns (onto unlit tiles, away from you), then come
-    // again - a strike out of hiding (it was unseen as it closed in) is a lunge, x1.5.
-    const t = m.target, shown = () => g.map.visible[m.y]?.[m.x];
-    if (dist(m, t) === 1 && !m.fading) {
-      if (m.lunge && shown()) g.log('The Wight lunges out of the darkness!', '#9fc27a');
-      m.attack(t, g, { mult: m.lunge ? 1.5 : 1 });
-      Object.assign(m, { lunge: false, fading: 2 });
+    const snuff = c => {
+      g.map.set(c.x, c.y, 'candleout'); g.map.computeLights();
+      heave(pick(here('grave')));
+    };
+    if (halved) { // the tomb goes cold
+      Object.assign(m, { cold: true, chill: 0.35 });
+      const lit = shuffle(here('candle'));
+      lit.slice(0, Math.ceil(lit.length / 2)).forEach(c => { g.map.set(c.x, c.y, 'candleout'); });
+      g.map.computeLights();
+      here('grave').forEach(heave);
+      g.log('An icy gust howls through the tomb - candles gutter out and the graves heave! Frost spreads from the Wight.', '#bfe8ff');
+      m.reach = null;
       return true;
     }
-    if (m.fading > 0) {
-      m.fading--;
-      const c = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(m.x, m.y, c.x, c.y) && inRect(r, c))
-        .sort((a, b) => g.map.isLit(a.x, a.y) - g.map.isLit(b.x, b.y) || dist(b, t) - dist(a, t))[0];
-      if (c && dist(c, t) >= dist(m, t)) {
-        g.moveTo(m, c.x, c.y);
-        if (shown() && !m.fading) g.log('The Wight melts back into the darkness.', '#9fc27a');
+    if (m.reach) { // the warned snuff lands - unless it was struck while reaching
+      const { c, hp } = m.reach;
+      m.reach = null; m.snuffCd = 6;
+      if (m.hp < hp) { if (seen(m.x, m.y)) g.log('The Wight recoils - the candle survives!', '#ffd24a'); return true; }
+      if (g.map.get(c.x, c.y) === 'candle' && dist(m, c) <= 1) {
+        snuff(c);
+        if (seen(c.x, c.y)) g.log('The Wight pinches out a grave candle - the dark deepens, and an open grave heaves...', '#9fc27a');
       }
       return true;
     }
-    if (g.submerged(m)) m.lunge = true; // (closing in unseen)
+    if (--m.snuffCd <= 0) { // off to put out a candle
+      const dm = g.map.distanceFrom(m.x, m.y, (x, y) => g.map.walkable(x, y));
+      const near = c => DIRS.map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy })).filter(s => g.map.walkable(s.x, s.y)).reduce((b, s) => Math.min(b, dm[s.y][s.x]), Infinity);
+      const c = here('candle').sort((a, b) => near(a) - near(b))[0];
+      if (c) {
+        if (dist(m, c) <= 1) {
+          m.reach = { c, hp: m.hp };
+          if (seen(m.x, m.y)) g.log('The Wight reaches for a grave candle - strike it now!', '#ffd24a');
+          return true;
+        }
+        const goal = DIRS.map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy })).filter(s => g.map.walkable(s.x, s.y) && !g.occupied(s.x, s.y))
+          .sort((a, b) => dm[a.y][a.x] - dm[b.y][b.x])[0];
+        if (goal) { g.stepToward(m, goal); return true; }
+      }
+    }
     return false;
   },
   // The Death Knight: the executioner's swing - raises his blade over the 3 tiles in front of his foe for a turn (marked),

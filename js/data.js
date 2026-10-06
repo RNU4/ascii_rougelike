@@ -105,8 +105,8 @@ const MONSTERS = {
     fang: { every: 5, mult: 2, status: { poison: 4 }, msg: 'The Grave Serpent rears back and sinks its fangs in!' }, remains: 'bones', shedMsg: 'A coil of the Grave Serpent goes limp!', loot: 'rare' },
   serpentpart: { name: 'Grave Serpent', ch: 'o', color: '#6f9f52', hp: 1, atk: 0, def: 2, xp: 0, ai: 'segment', faction: 'undead', corpse: null },
   // Wight: its touch curses you (-3 DEF) and it heals by the damage it deals.
-  wight:    { name: 'Wight', ch: 'V', color: '#9fc27a', hp: 36, atk: 8, def: 3, xp: 30, ai: 'boss', pattern: 'wight', baseAi: 'chase', faction: 'undead',
-    onHit: { cursed: 5 }, drain: true, darkstalker: true, snuffCd: 3, graveCd: 4, loot: 'magic' }, // (darkstalker: unseen in the dark unless beside you)
+  wight:    { name: 'Wight', ch: 'V', color: '#9fc27a', hp: 60, atk: 8, def: 3, xp: 30, ai: 'boss', pattern: 'wight', baseAi: 'chase', faction: 'undead',
+    onHit: { cursed: 5 }, drain: true, darkstalker: 2, lightWeak: true, snuffCd: 4, loot: 'magic' }, // (darkstalker 2: only its eyes past 2 tiles in the dark; lightWeak: x1.5 damage in light)
   // Banshee: shuns light, and wails - everyone around it is hurt and silenced.
   banshee:  { name: 'Banshee', ch: '§', color: '#dde4ff', hp: 24, atk: 6, def: 1, xp: 30, ai: 'caster', faction: 'undead', fly: true,
     skills: ['wail'], shunLight: true, loot: 'magic' },

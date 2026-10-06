@@ -332,6 +332,12 @@ function reweave(g, c) {
   if (g.map.visible[c.y][c.x]) g.log('A silk weaver spins the burnt gap closed.', '#e8d088');
 }
 
+// A snuffed grave candle (the Wight's tomb): walk into it to light it again.
+TILES.candleout.onBump = (g, x, y) => {
+  g.map.set(x, y, 'candle'); g.map.computeLights();
+  g.log('You relight the grave candle - its green glow pushes back the dark.', '#c8f0a8');
+};
+
 // Cocoon (the Silk Hive): walk into it to cut it open - an old adventurer's gear (half the time), a spiderling brood (a
 // quarter) or a dried husk.
 TILES.cocoon.onBump = (g, x, y) => {

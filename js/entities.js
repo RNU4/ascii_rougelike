@@ -68,6 +68,7 @@ class Entity {
       return core.hurt(n, game, src, this);
     }
     if (this.status.phased || (this === game.player && game.ghost)) return; // debug ghost mode: no damage
+    if (this.lightWeak && game.map.isLit(this.x, this.y)) n = Math.round(n * 1.5); // exposed in the light (the Wight)
     if (src === game.player || src?.ally) game.provoke(this);
     this.awake = true; // getting hurt wakes anyone (e.g. goblins jumped by the troll out of your sight)
     if (this.manaShield && this.mp > this.maxMp / 2) { // Mana Shield (Mage): mana above half soaks damage first

@@ -163,8 +163,12 @@ class Game {
   // Walkable ground, or deep water for swimmers.
   canEnter(e, x, y) { const t = TILES[this.map.get(x, y)]; return t.walk || !!((e.swim || e.fly) && t.swim); } // fly: over water
   // Submerged swimmers (drowned ones in deep water) stay hidden until they're right next to you.
-  // Hidden from you: a submerged swimmer, or a darkstalker (the Wight) on an unlit tile - unless it's right beside you.
-  submerged(m) { return dist(m, this.player) > 1 && (!!m.submerge && !!TILES[this.map.get(m.x, m.y)].swim || !!m.darkstalker && !this.map.isLit(m.x, m.y)); }
+  // Hidden from you: a submerged swimmer (unless beside you), or a darkstalker on an unlit tile farther than its `darkstalker`
+  // (true = 1; the Wight: 2).
+  submerged(m) {
+    const d = dist(m, this.player);
+    return d > 1 && !!m.submerge && !!TILES[this.map.get(m.x, m.y)].swim || !!m.darkstalker && d > (m.darkstalker === true ? 1 : m.darkstalker) && !this.map.isLit(m.x, m.y);
+  }
   seesMonster(m) { return this.map.visible[m.y][m.x] && !this.submerged(m); }
   // In a fight: some monster is targeting e (you by default) - m.target, set each turn by pickTarget.
   inCombat(e = this.player) { return this.monsters.some(o => o.alive && o.awake && o.target === e); }
