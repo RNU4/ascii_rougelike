@@ -245,7 +245,7 @@ const LEVELS = [
 
 // Test maps (debug J): a level def loaded in place of the current floor, to try out a new layout before it replaces one.
 const TEST_LEVEL = {
-  ...LEVELS[3], depth: 3, name: 'the Forgotten Crypt', size: [134, 70], // (6x4 grid cells of 22x17 - room for 17x11 boss rooms) count: 16, // depth: which floor it stands in for
+  ...LEVELS[3], depth: 3, name: 'the Forgotten Crypt', size: [116, 54], // (5x3 grid cells of 22x17 - room for 17x11 boss rooms) count: 16, // depth: which floor it stands in for
   // (the bigger map would otherwise scale the war bands and hand packs way up; the mini-bosses wait in their arenas)
   groups: [{ monsters: ['hand', 'hand', 'hand', 'hand'], count: 2 }], // (the goblin raiders have their own camp room)
   gen: (w, h) => placeTorches(decorate(genCryptHub(w, h), 'bones', 40, 3), 32, 6),
