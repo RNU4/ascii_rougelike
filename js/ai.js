@@ -449,6 +449,13 @@ const AI = {
   // as its `baseAi`.
   boss(m, g) {
     if (!BOSS_PATTERNS[m.pattern]?.(m, g)) AI[m.baseAi](m, g);
+    if (m.darkstalker) { // slipping into / out of the dark is shown, not a pop: it dissolves where last seen, and fades in
+      const hid = g.submerged(m);
+      if (m.wasHidden && !hid) m.flashCss = { turn: g.turn, css: 'emerge' };
+      if (!m.wasHidden && hid && m.lastSeenAt) g.fx.float(m.lastSeenAt, m.ch, m.color, { css: 'fadeout' });
+      m.wasHidden = hid;
+      if (!hid) m.lastSeenAt = { x: m.x, y: m.y };
+    }
   },
   caster(m, g) {
     const t = m.target;

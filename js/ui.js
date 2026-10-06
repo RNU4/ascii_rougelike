@@ -119,6 +119,9 @@ Object.assign(Game.prototype, {
       if (pieces.some(q => map.visible[q.y][q.x])) pieces.forEach(q => map.hasLos(p, q) && bodyShown.add(q.x + ',' + q.y));
     }
 
+    // Eyes in the dark: a hidden darkstalker (the Wight) you have a line of sight to, within 8, shows as a pair of faint
+    // blinking eyes - you can watch it circle and close in without seeing it.
+    const eyes = new Set(this.monsters.filter(m => m.alive && m.darkstalker && this.submerged(m) && dist(m, p) <= 8 && map.hasLos(p, m)).map(m => m.x + ',' + m.y));
     const danger = new Set((map.dangers || []).filter(d => d.owner.alive).flatMap(d => d.tiles.map(c => c.x + ',' + c.y))); // (boss telegraphs)
 
     const tgt = this.aim, aimOk = tgt && this.aimOk();
@@ -135,6 +138,7 @@ Object.assign(Game.prototype, {
     for (let y = camY; y < camY + viewH; y++) {
       for (let x = camX; x < camX + viewW; x++) {
         const k = x + ',' + y, vis = map.visible[y][x] || bodyShown.has(k);
+        if (eyes.has(k)) { html += '<span class="eyes">"</span>'; continue; } // (a darkstalker, unseen in the dark)
         if (!vis && !map.seen[y][x]) { html += '<span> </span>'; continue; }
         const t = map.get(x, y);
         let ch = t === 'roots' ? rootGlyph(map, x, y) : chars[t] || TILES[t].ch, color = colors[t] || TILES[t].color, bg = TILES[t].bg || bgs[t] || '';
