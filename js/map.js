@@ -40,7 +40,10 @@ const TILES = {
   moldpatch: { ch: ',', color: '#7fae3c', walk: true, burnsTo: 'floor', name: 'mold' }, // spores on step; spreads (level.spread)
   // doors: `door` = monsters open it too; `locked` = needs a key (see features.js)
   door:       { ch: '+', color: '#c08a4a', walk: false, opaque: true, door: true, name: 'door' },
-  doorOpen:   { ch: '/', color: '#c08a4a', walk: true, keep: true, name: 'open door' },
+  doorOpen:   { ch: '/', color: '#c08a4a', walk: true, keep: true, closesTo: 'door', name: 'open door' },
+  // A boss room's door (every way into one): iron-bound, crimson - you know what's behind it. openTile/closesTo: its open form.
+  bossdoor:   { ch: '+', color: '#ff6a5a', bg: '#4a1010', walk: false, opaque: true, door: true, openTile: 'bossdoorOpen', name: 'iron-bound door' },
+  bossdoorOpen: { ch: '/', color: '#ff6a5a', bg: '#2a0a0a', walk: true, keep: true, closesTo: 'bossdoor', name: 'open iron-bound door' },
   // locked: needs the key whose id matches `key`; becomes `opensTo`. `lockedMsg` is shown without the key.
   lockedDoor: { ch: '+', color: '#ffd24a', bg: '#3a2a10', walk: false, opaque: true, locked: true, key: 'cryptkey', opensTo: 'doorOpen',
     name: 'sealed door', lockedMsg: 'The door is sealed tight. Something powerful must hold the key.' },

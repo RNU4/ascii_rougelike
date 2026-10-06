@@ -808,9 +808,10 @@ function genCryptChambers(w, h) {
     const rm = rooms[i];
     ARENA_BUILDS[role[i]](map, rm, mid(rooms[i - 1]), i === keyHolder);
     for (let y = rm.y; y < rm.y + rm.h; y++) for (let x = rm.x; x < rm.x + rm.w; x++) map.noSpawn[y][x] = true;
-    if (role[i] !== 'flooded') map.arenas.push({ r: rm, state: 'ready' }); // a boss room: locks behind you (arenaTick)
+    if (role[i] !== 'flooded') { map.arenas.push({ r: rm, state: 'ready' }); addDoors(map, rm, 1, 'bossdoor'); } // a boss room: its own doors, and it locks behind you (arenaTick)
   }
   map.arenas.push({ r: hall, state: 'ready' }); // (the Lich's)
+  addDoors(map, hall, 1, 'bossdoor');
   rooms.forEach((rm, i) => i !== trialAt && addDoors(map, rm, CRYPT_DOORS));
   map.reserved.push(...rooms, ...sides.map(s => s.r));
   // Monsters wait in the chambers and rooms, not strung along the corridors between them.

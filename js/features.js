@@ -5,7 +5,7 @@
 // Open doors swing shut once their doorway has been empty for DOOR_CLOSE turns (see closeDoors).
 const DOOR_CLOSE = 6;
 function openDoor(g, x, y) {
-  g.map.set(x, y, 'doorOpen');
+  g.map.set(x, y, TILES[g.map.get(x, y)].openTile || 'doorOpen');
   (g.map.openedAt ||= {})[x + ',' + y] = g.turn;
   g.map.computeLights();
 }
@@ -16,10 +16,11 @@ function closeDoors(g) {
   let shut = false;
   for (const k in at) {
     const [x, y] = k.split(',').map(Number);
-    if (m.get(x, y) !== 'doorOpen') { delete at[k]; continue; }
+    const shutTo = TILES[m.get(x, y)].closesTo;
+    if (!shutTo) { delete at[k]; continue; }
     if (g.occupied(x, y) || g.itemAt(x, y)) { at[k] = g.turn; continue; }
     if (g.turn - at[k] < DOOR_CLOSE) continue;
-    m.set(x, y, 'door');
+    m.set(x, y, shutTo);
     delete at[k];
     shut = true;
     if (m.visible[y][x]) g.log('A door swings shut.', '#a87');
@@ -27,6 +28,7 @@ function closeDoors(g) {
   if (shut) m.computeLights();
 }
 TILES.door.onBump = (g, x, y) => { openDoor(g, x, y); g.log('You open the door.'); };
+TILES.bossdoor.onBump = (g, x, y) => { openDoor(g, x, y); g.log('You heave open the iron-bound door. Something waits beyond...', '#ff6a5a'); };
 // Locked doors (sealed vault door, cell door) open only with the key whose id matches the tile's `key`.
 function unlock(g, x, y) {
   const t = TILES[g.map.get(x, y)], p = g.player, key = p.inv.find(i => i.kind === 'key' && i.id === t.key);
