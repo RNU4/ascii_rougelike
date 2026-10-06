@@ -467,6 +467,8 @@ function raggedHollow(map, r, fromRoom, mid, floor) {
 }
 
 // Special side rooms. r: the carved room; from: the path chamber whose corridor leads in.
+// A room nothing spawns in (the ways down to the side-floors stay clear).
+const calmRoom = (map, r) => { for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.noSpawn[y][x] = true; };
 const SIDE_BUILDS = {
   // Treasure vault: solid granite all round but for one locked door, mid-wall on the side facing the chamber it hangs
   // off, with its own corridor straight to it (that corridor stays on the near side, so it never cuts the vault's wall).
@@ -491,12 +493,13 @@ const SIDE_BUILDS = {
     map.loot.push({ ...c, rarity: 'rare' });
     addDoors(map, r, CRYPT_DOORS);
   },
-  // The way down to the Ossuary (a side-floor): a small bone crypt with a stairway in the middle.
+  // The way down to the Ossuary (a side-floor): a small bone crypt with a stairway in the middle (nothing spawns in it).
   ossuarystair(map, r) {
     const c = roomMid(r);
     wallRing(map, r, 'bonewall');
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (chance(0.4)) map.set(x, y, 'bones');
     map.set(c.x, c.y, 'bonestair');
+    calmRoom(map, r);
     addDoors(map, r, CRYPT_DOORS);
   },
   // The way down to the Goblin Warrens (a side-floor): a dug-out tunnel mouth - trampled dirt, supply crates and barrels
@@ -506,6 +509,7 @@ const SIDE_BUILDS = {
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.set(x, y, 'dirt');
     edgeProp(map, r, r.x, r.y, 'crate'); edgeProp(map, r, r.x + r.w - 1, r.y + r.h - 1, 'barrel');
     map.set(c.x, c.y, 'warrenstair');
+    calmRoom(map, r);
     addDoors(map, r, CRYPT_DOORS);
   },
   // The way down to the Silk Hive (a side-floor): a shaft choked with silk - webbed walls, strands and cobwebs underfoot.
@@ -514,6 +518,7 @@ const SIDE_BUILDS = {
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.set(x, y, chance(0.3) ? 'web' : 'silkfloor');
     wallRing(map, r, 'silkwall');
     map.set(c.x, c.y, 'hivestair');
+    calmRoom(map, r);
     addDoors(map, r, CRYPT_DOORS);
   },
   // Goblin war camp: a raiding party holed up on trampled dirt around a campfire - hide tents in the corners with
