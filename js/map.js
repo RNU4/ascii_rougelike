@@ -40,7 +40,7 @@ const TILES = {
   moldpatch: { ch: ',', color: '#7fae3c', walk: true, burnsTo: 'floor', name: 'mold' }, // spores on step; spreads (level.spread)
   // doors: `door` = monsters open it too; `locked` = needs a key (see features.js)
   door:       { ch: '+', color: '#c08a4a', walk: false, opaque: true, door: true, name: 'door' },
-  doorOpen:   { ch: '/', color: '#c08a4a', walk: true, name: 'open door' },
+  doorOpen:   { ch: '/', color: '#c08a4a', walk: true, keep: true, name: 'open door' },
   // locked: needs the key whose id matches `key`; becomes `opensTo`. `lockedMsg` is shown without the key.
   lockedDoor: { ch: '+', color: '#ffd24a', bg: '#3a2a10', walk: false, opaque: true, locked: true, key: 'cryptkey', opensTo: 'doorOpen',
     name: 'sealed door', lockedMsg: 'The door is sealed tight. Something powerful must hold the key.' },
@@ -63,7 +63,7 @@ const TILES = {
   lichwall:   { ch: '#', color: '#8a6ab0', bg: '#140c1e', walk: false, opaque: true, name: 'black stone wall' },
   skullniche: { ch: 'Ω', color: '#d8d0b8', bg: '#140c1e', walk: false, opaque: true, name: 'skull niche' },
   lichfloor:  { ch: '.', color: '#4a3e5a', bg: '#0c0912', walk: true, name: 'black flagstone' },
-  dais:       { ch: '▒', color: '#3a2c4e', bg: '#150f1e', walk: true, name: 'ritual dais' },
+  dais:       { ch: '▒', color: '#3a2c4e', bg: '#150f1e', walk: true, keep: true, name: 'ritual dais' },
   soulrune:   { ch: '·', color: '#c8a0ff', bg: '#0c0912', walk: true, css: 'ebb', name: 'soul rune' },
   pitwall:    { ch: '#', color: '#9a8a60', bg: '#1e1a10', walk: false, opaque: true, name: 'crumbling pit wall' },
   pitfloor:   { ch: '.', color: '#6a5a3a', bg: '#15110a', walk: true, name: 'packed earth' },
@@ -79,13 +79,13 @@ const TILES = {
   candle:     { ch: '¡', color: '#c8f0a8', walk: false, light: 5, lightColor: '110,220,110', name: 'grave candle' },
   candleout:  { ch: '¡', color: '#4a5a44', walk: false, name: 'snuffed candle' }, // (the Wight's doing)
   gravestir:  { ch: '∩', color: '#e0b070', bg: '#3a2410', walk: false, css: 'swell', name: 'heaving grave' }, // (a ghoul climbs out next turn)
-  grave:      { ch: '∩', color: '#8a7050', bg: '#1a140c', walk: true, name: 'open grave' },
+  grave:      { ch: '∩', color: '#8a7050', bg: '#1a140c', walk: true, keep: true, name: 'open grave' },
   pew:        { ch: '═', color: '#9a7040', walk: false, name: 'pew' },
   glass:      { ch: '▒', color: '#8a6ad8', bg: '#1a1030', walk: false, opaque: true, name: 'stained glass window' },
   chapelaltar: { ch: '†', color: '#e8e8ff', bg: '#2a2a44', walk: false, name: 'chapel altar' },
   // Sarcophagus ambush (crypt): step onto the plinth (to take what lies on it) and the coffins around burst open.
-  plinth:     { ch: '_', color: '#e8c060', bg: '#2a2410', walk: true, name: 'plinth' },
-  cellDoorOpen: { ch: '/', color: '#9aa4b0', walk: true, name: 'open cell door' },
+  plinth:     { ch: '_', color: '#e8c060', bg: '#2a2410', walk: true, keep: true, name: 'plinth' },
+  cellDoorOpen: { ch: '/', color: '#9aa4b0', walk: true, keep: true, name: 'open cell door' },
   bars:       { ch: '#', color: '#9aa4b0', walk: false, name: 'iron bars' }, // see, shoot and light through; can't pass
   chains:     { ch: '&', color: '#9aa4b0', walk: false, opaque: true, name: 'shackles' },
   straw:      { ch: '"', color: '#c8b060', walk: true, name: 'straw' },
@@ -118,21 +118,21 @@ const TILES = {
   runefloor: { ch: '·', color: '#7a5a9a', walk: true, name: 'runed floor' },
   portcullis: { ch: '#', color: '#c8d0e0', bg: '#22242c', walk: false, name: 'iron portcullis' }, // boss rooms lock with these (see-through)
   sealed:    { ch: '#', color: '#ff66cc', bg: '#4a1040', walk: false, opaque: true, name: 'sealed gate' },
-  runecircle: { ch: '○', color: '#a070e0', walk: true, name: 'summoning circle' },
+  runecircle: { ch: '○', color: '#a070e0', walk: true, keep: true, name: 'summoning circle' },
   sigil:     { ch: '☼', color: '#ff80e0', walk: true, light: 2, lightColor: '255,100,220', name: 'trial sigil' },
   obelisk:   { ch: '▲', color: '#c9a0ff', bg: '#241a33', walk: false, light: 3, lightColor: '170,110,255', name: 'rune obelisk' },
   runeflare: { ch: '*', color: '#ff66cc', bg: '#3a1040', walk: true, css: 'swell', name: 'flaring rune' }, // a wave rises here next turn
   // A summoner's mark (raise.warn): something rises from here next turn (AI.summoner). Nobody can step on it.
   stirbones: { ch: ',', color: '#fff4c0', bg: '#4a3410', walk: false, css: 'swell', name: 'stirring bones' },
   // Ossuary heaps (level.stirBones, see tickBones in features.js): walkable until one stirs - then nobody can step on it, and a skeleton rises next turn.
-  bonepile:  { ch: ',', color: '#d8cfa8', walk: true, name: 'heap of bones' },
+  bonepile:  { ch: ',', color: '#d8cfa8', walk: true, keep: true, name: 'heap of bones' },
   bonestir:  { ch: ',', color: '#fff4c0', bg: '#4a3410', walk: false, css: 'swell', name: 'stirring heap of bones' },
   // Burial niches (addNiches, level.niches): alcoves in a corridor wall. nicheam looks the same - something lurches out when you pass (tickNiches).
-  niche:     { ch: '∩', color: '#a89a74', bg: '#2a2418', walk: true, name: 'burial niche' },
+  niche:     { ch: '∩', color: '#a89a74', bg: '#2a2418', walk: true, keep: true, name: 'burial niche' },
   // The hand room (addHandRoom, tickHandRoom): a wall with hands set into it. Step into the room and they claw loose (back to bonewall, a crawling hand beside it).
   handwall:  { ch: 'ƒ', color: '#e8d8b8', bg: '#3a3020', walk: false, opaque: true, name: 'wall of hands' },
-  nicheused: { ch: '∩', color: '#6a6048', bg: '#201c12', walk: true, name: 'burial niche' }, // a niche whose find you've had
-  nicheam:   { ch: '∩', color: '#a89a74', bg: '#2a2418', walk: true, name: 'burial niche' },
+  nicheused: { ch: '∩', color: '#6a6048', bg: '#201c12', walk: true, keep: true, name: 'burial niche' }, // a niche whose find you've had
+  nicheam:   { ch: '∩', color: '#a89a74', bg: '#2a2418', walk: true, keep: true, name: 'burial niche' },
   stirwater: { ch: '~', color: '#a0ffff', bg: '#0c3a4a', walk: false, css: 'swell', name: 'churning water' },
   // special-room wall materials (all solid). bg: optional tile background
   granite:  { ch: '#', color: '#7d93d6', bg: '#2c3a66', walk: false, opaque: true },

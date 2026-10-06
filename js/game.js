@@ -625,7 +625,10 @@ class Game {
       if (TILES[this.map.get(s.x, s.y)].walk && !['stairs', 'upstairs'].includes(this.map.get(s.x, s.y))) this.map.set(s.x, s.y, victim.remains || 'bones');
     }
     const corpse = victim.corpse === undefined ? 'bones' : victim.corpse; // corpse: tile left behind (null = none)
-    if (corpse && TILES[this.map.get(victim.x, victim.y)].walk && !['stairs', 'upstairs'].includes(this.map.get(victim.x, victim.y)))
+    // ...on plain ground only: never over a tile that means something (stairs, side-floor ways down, doors, runes, the sigil,
+    // niches, bone heaps, graves - flagged `keep`, or animated / lit / timed skill tiles), or it would wipe it out
+    const under = this.map.get(victim.x, victim.y), ut = TILES[under];
+    if (corpse && ut.walk && !ut.keep && !ut.side && !ut.css && !ut.light && !['stairs', 'upstairs'].includes(under) && !this.map.timed?.some(t => t.x === victim.x && t.y === victim.y))
       this.map.set(victim.x, victim.y, corpse);
     if (!(killer instanceof Monster && !killer.ally)) { // no XP when a rival monster got the kill
       p.gainXp(victim.xp, this);
