@@ -18,7 +18,7 @@ const CLASSES = [
     desc: 'Fire, frost and lightning. Mana Shield: mana above half soaks damage.' },
   { key: 'rogue', difficulty: 'Medium', title: 'Rogue', ch: '@', color: '#4f4', hp: 32, atk: 4, int: 1, def: 1, mp: 12, regen: 4, crit: 0.3, dodge: 0.1,
     desc: 'Frequent crits, poison, stuns and teleports. Dodges 10% of attacks.' },
-  { key: 'necromancer', difficulty: 'Medium', title: 'Necromancer', ch: '@', color: '#a6f', hp: 28, atk: 2, int: 4, caster: true, def: 1, mp: 16, regen: 3, lifesteal: 2, kin: 'undead',
+  { key: 'necromancer', difficulty: 'Medium', title: 'Necromancer', ch: '@', color: '#a6f', hp: 28, atk: 2, int: 4, caster: true, def: 1, mp: 16, regen: 3, lifesteal: 2, kin: 'undead', playerOnly: true,
     desc: 'Raises the dead from bones. Kills heal you. Undead leave you be.' },
   { key: 'trickster', difficulty: 'Hard', title: 'Trickster', ch: '@', color: '#f6c', hp: 24, atk: 3, int: 4, caster: true, def: 1, mp: 16,
     regen: 3, crit: 0.1, playerOnly: true, manaOnKill: 3, dodge: 0.15,
