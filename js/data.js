@@ -272,6 +272,10 @@ const BODY_LAYOUTS = {
 
 // Floors not yet wired into the dungeon (loaded from the debug floor menu, J): `depth` = the depth it stands in for.
 const EXTRA_FLOORS = {
+  bosstest: { // a hub with a door to every boss room, and gear at each rarity (genBossTest)
+    ...LEVELS[3], name: 'Boss test room', depth: 3, intro: 'A test room: every boss room off one hall. Gear of each rarity lies in rows - common, magic, rare.',
+    gen: (w, h) => genBossTest(w, h), size: [110, 52], groups: [], count: 0, items: 0, trial: null, noUp: true, chars: { wall: '#' },
+  },
   geartest: { // every exclusive gear piece laid out to try on (genGearTest)
     name: 'Gear test room', depth: 3, intro: 'A test room: the bone armour set, the bone relic set and the silk set, laid out in rows.',
     gen: (w, h) => genGearTest(w, h), size: [26, 14], fov: 40, colors: { floor: '#3e3a30' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,

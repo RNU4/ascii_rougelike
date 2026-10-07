@@ -125,7 +125,7 @@ class Game {
       if (this.canEnter(t, s.x, s.y) && !this.occupied(s.x, s.y)) this.spawn(t, s);
     }
     for (const l of m.loot.filter(l => m.walkable(l.x, l.y))) {
-      const it = l.item ? makeConsumable(CONSUMABLES.find(c => c.name === l.item)) : l.base ? makeGear(this.depth + 1, 'common', null, l.base) : l.rarity ? makeGear(this.depth + 1, l.rarity, l.pool) : randomItem(this.depth + 1);
+      const it = l.item ? makeConsumable(CONSUMABLES.find(c => c.name === l.item)) : l.base ? makeGear(this.depth + 1, l.rarity || 'common', null, l.base) : l.rarity ? makeGear(this.depth + 1, l.rarity, l.pool) : randomItem(this.depth + 1);
       this.items.push({ ...it, x: l.x, y: l.y });
     }
     for (let i = 0; i < scaled(def.items, w, h); i++) this.items.push({ ...randomItem(this.depth), ...free() });

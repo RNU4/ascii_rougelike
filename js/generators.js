@@ -683,6 +683,38 @@ function genGearTest(w, h) {
   return placeTorches(map, 4, 4);
 }
 
+// Boss test (EXTRA_FLOORS.bosstest): a lit hub with a corridor and boss door to every boss room - the Death Knight's hall
+// (west), the Wight's tomb (north-west), the Banshee's chapel (north-east), the Grave Serpent's pit (east) and the Lich's
+// sanctum with its stairs vault (south). The same ARENA_BUILDS / furnishLichHall rooms as the crypt, each locking behind
+// you (map.arenas). In the hub, BOSS_TEST_GEAR at each rarity: a row of common, magic and rare pieces.
+const BOSS_TEST_GEAR = ['Iron Helm', 'Plate Armor', 'Gauntlets', 'Greaves', 'Tower Shield', 'Longsword', 'Circlet', 'Runestaff', 'Spell Orb', 'Gold Ring', 'Jade Amulet'];
+function genBossTest(w, h) {
+  const map = new GameMap(w, h), A = ARENA;
+  map.noSpawn = grid(w, h, true);
+  const hub = { x: 43, y: 21, w: 25, h: 9 }, c = roomMid(hub);
+  const rooms = { deathknight: { x: 4, y: 20 }, wight: { x: 18, y: 3 }, banshee: { x: 76, y: 3 }, serpent: { x: 89, y: 20 } };
+  const hall = { x: 47, y: 35, w: A.w, h: A.h }, vault = { x: 53, y: 47, w: 5, h: 3 };
+  for (const r of [hub, hall, ...Object.values(rooms).map(r => Object.assign(r, A))]) carveRect(map, r.x, r.y, r.w, r.h);
+  const dig = pts => pts.slice(1).forEach((b, i) => line(pts[i].x, pts[i].y, b.x, b.y).forEach(p => map.set(p.x, p.y, 'floor')));
+  dig([{ x: 21, y: c.y }, { x: 42, y: c.y }]); // west
+  dig([{ x: 68, y: c.y }, { x: 88, y: c.y }]); // east
+  dig([{ x: 47, y: 20 }, { x: 47, y: 8 }, { x: 35, y: 8 }]); // north-west
+  dig([{ x: 63, y: 20 }, { x: 63, y: 8 }, { x: 75, y: 8 }]); // north-east
+  dig([{ x: c.x, y: 30 }, { x: c.x, y: 34 }]); // south
+  map.arenas = [];
+  for (const [role, r] of Object.entries(rooms)) {
+    ARENA_BUILDS[role](map, r, c, false);
+    map.arenas.push({ r, state: 'ready' }); addDoors(map, r, 1, 'bossdoor');
+  }
+  furnishLichHall(map, hall, vault);
+  map.arenas.push({ r: hall, state: 'ready' }); addDoors(map, hall, 1, 'bossdoor');
+  wallRing(map, hub, 'marble');
+  ['common', 'magic', 'rare'].forEach((rarity, row) => BOSS_TEST_GEAR.forEach((base, i) => map.loot.push({ x: hub.x + 2 + i * 2, y: hub.y + 1 + row * 2, base, rarity })));
+  map.start = { x: c.x, y: hub.y + hub.h - 2 };
+  map.reserved.push(hub, hall, ...Object.values(rooms));
+  return placeTorches(map, 32, 6);
+}
+
 // Bone heap glyph test (EXTRA_FLOORS.bonetest): one column per candidate glyph (left to right = BONE_GLYPHS), three rows - resting on
 // bare floor, resting in bone litter, and stirring - to pick the look of a bone heap (bonepile / bonestir in map.js).
 const BONE_GLYPHS = ['∩', '⌂', '¤', '░', '▒', 'Ω', '∞', '"', '^', ','];
