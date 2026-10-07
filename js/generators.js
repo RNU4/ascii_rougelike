@@ -398,8 +398,9 @@ const ARENA_BUILDS = {
   // far end with the Banshee before it. A lone brazier by the door is the only warm light - she keeps to the dark.
   banshee(map, r, from, withKey) {
     const c = roomMid(r), dir = farSide(r, from);
-    for (let y = r.y + 1; y < r.y + r.h - 1; y++)
-      if (y !== c.y) for (let x = r.x + 2; x < r.x + r.w - 2; x++) if (x !== c.x) map.set(x, y, 'pew');
+    // pews on every other row, in short benches with gaps between: room to move about (her keens and flits need it)
+    for (let y = r.y + 1; y < r.y + r.h - 1; y += 2)
+      if (y !== c.y) for (let x = r.x + 2; x < r.x + r.w - 2; x++) if (x !== c.x && Math.abs(x - c.x) % 4 !== 0) map.set(x, y, 'pew');
     dressLongWalls(map, r, 'glass');
     wallRing(map, r, 'chapelwall'); // (the end walls: the long ones are windows)
     edgeProp(map, r, dir > 0 ? r.x : r.x + r.w - 1, r.y, 'brazier');
