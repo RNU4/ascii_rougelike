@@ -550,7 +550,7 @@ class Game {
       if (m.runTo && !m.status.fear && this.gongRun(m)) continue;
       if (m.ally) AI[m.ai](m, this); // allies pick their own foes and follow you
       else if (m.status.fear) AI.flee(m, this);
-      else if (!m.target && m.ai !== 'multibody' && !m.busy) m.home ? this.stepToward(m, m.home) : AI.wander(m, this); // nothing to fight: guards go home (a multi-tile creature still assembles)
+      else if (!m.target && (m.baseAi || m.ai) !== 'multibody' && !m.busy) m.home ? this.stepToward(m, m.home) : AI.wander(m, this); // nothing to fight: guards go home (a multi-tile creature still assembles)
       else if (m.shunLight && this.map.isLit(m.target.x, m.target.y)) AI.wander(m, this); // targets in torchlight are safe from it
       else AI[m.ai](m, this);
       if (m.alive && m.trail && this.map.get(m.x, m.y) === 'floor') this.map.set(m.x, m.y, m.trail);

@@ -126,6 +126,8 @@ const TILES = {
   obelisk:   { ch: '▲', color: '#c9a0ff', bg: '#241a33', walk: false, light: 3, lightColor: '170,110,255', name: 'rune obelisk' },
   runeflare: { ch: '*', color: '#ff66cc', bg: '#3a1040', walk: true, css: 'swell', name: 'flaring rune' }, // a wave rises here next turn
   // A summoner's mark (raise.warn): something rises from here next turn (AI.summoner). Nobody can step on it.
+  legionbones: { ch: ',', color: '#e8ffd0', bg: '#2a1a3a', walk: false, css: 'swell', name: 'stirring bones' }, // (the Lich's legion: a skeleton next turn)
+  skinstir:   { ch: '~', color: '#e8f0a0', bg: '#2a2410', walk: false, css: 'swell', name: 'twitching skin' }, // (a grave adder next turn)
   stirbones: { ch: ',', color: '#fff4c0', bg: '#4a3410', walk: false, css: 'swell', name: 'stirring bones' },
   // Ossuary heaps (level.stirBones, see tickBones in features.js): walkable until one stirs - then nobody can step on it, and a skeleton rises next turn.
   bonepile:  { ch: ',', color: '#d8cfa8', walk: true, keep: true, name: 'heap of bones' },

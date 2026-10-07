@@ -100,16 +100,17 @@ const MONSTERS = {
   animatedarmour: { name: 'animated armour', ch: 'Ω', color: '#b0bcd4', hp: 18, atk: 6, def: 4, xp: 12, ai: 'slow', faction: 'undead', corpse: null },
   // Grave Serpent (crypt mini-boss, its own pit): a long chain-form multibody (see Bone Colossus). fang: a special bite
   // every `every` turns - `mult` x damage plus `status`.
-  graveserpent: { name: 'Grave Serpent', ch: '♦', color: '#9fd07a', hp: 60, atk: 8, def: 2, xp: 45, ai: 'multibody', faction: 'undead',
+  graveserpent: { name: 'Grave Serpent', ch: '♦', color: '#9fd07a', hp: 60, atk: 8, def: 2, xp: 45, ai: 'boss', pattern: 'serpent', baseAi: 'multibody', faction: 'undead', spitCd: 3,
     size: 8, part: 'serpentpart', form: 'chain',
     fang: { every: 5, mult: 2, status: { poison: 4 }, msg: 'The Grave Serpent rears back and sinks its fangs in!' }, remains: 'bones', shedMsg: 'A coil of the Grave Serpent goes limp!', loot: 'rare' },
+  graveadder: { name: 'grave adder', ch: 's', color: '#b8e08a', hp: 7, atk: 4, def: 0, xp: 6, ai: 'fast', faction: 'undead', onHit: { poison: 3 } }, // (out of the Serpent's shed skins)
   serpentpart: { name: 'Grave Serpent', ch: 'o', color: '#6f9f52', hp: 1, atk: 0, def: 2, xp: 0, ai: 'segment', faction: 'undead', corpse: null },
   // Wight: its touch curses you (-3 DEF) and it heals by the damage it deals.
   wight:    { name: 'Wight', ch: 'V', color: '#9fc27a', hp: 60, atk: 8, def: 3, xp: 30, ai: 'boss', pattern: 'wight', baseAi: 'chase', faction: 'undead',
     onHit: { cursed: 5 }, drain: true, darkstalker: 2, lightWeak: true, snuffCd: 4, loot: 'magic' }, // (darkstalker 2: only its eyes past 2 tiles in the dark; lightWeak: x1.5 damage in light)
   // Banshee: shuns light, and wails - everyone around it is hurt and silenced.
-  banshee:  { name: 'Banshee', ch: '§', color: '#dde4ff', hp: 24, atk: 6, def: 1, xp: 30, ai: 'caster', faction: 'undead', fly: true,
-    skills: ['wail'], shunLight: true, loot: 'magic' },
+  banshee:  { name: 'Banshee', ch: '§', color: '#dde4ff', hp: 45, atk: 6, def: 1, xp: 30, ai: 'boss', pattern: 'banshee', baseAi: 'chase', faction: 'undead', fly: true,
+    int: 6, keenCd: 2, loot: 'magic' }, // (her keen replaced the Wail skill; no shunLight - a boss you could stand in the brazier light and wait out)
   // Bone forge (an Ossuary chamber): a rooted heap of bone and sinew that keeps assembling skeletons from the bones around
   // it (summoner ai) until you smash it. rooted: never moves, can't be knocked back.
   boneforge: { name: 'bone forge', ch: '♦', color: '#ff6a3a', hp: 30, atk: 0, def: 3, xp: 25, ai: 'summoner', faction: 'undead',
@@ -163,8 +164,8 @@ const MONSTERS = {
     shot: { ch: '%', color: '#ddd', verb: 'web', status: { webbed: 2 } } }, // ossuary lairs. shot: projectile look + on-hit status
   moth:     { name: 'glow moth', ch: 'm', color: '#ff8', hp: 8, atk: 6, def: 0, xp: 8, ai: 'erratic' },
   // 5: crystal sanctum
-  lich:     { name: 'Lich', ch: 'L', color: '#c8ffb0', css: 'lich', hp: 60, atk: 9, def: 3, xp: 60, ai: 'summoner', range: 6, faction: 'undead', tome: true, int: 5, skills: ['drain', 'curse'],
-    raise: { from: ['bones'], to: 'floor', monster: 'skeleton', every: 8, max: 3, verb: 'raises a skeleton from the bones', color: '#4a2a66',
+  lich:     { name: 'Lich', ch: 'L', color: '#c8ffb0', css: 'lich', hp: 60, atk: 9, def: 3, xp: 60, ai: 'boss', pattern: 'lich', baseAi: 'summoner', graspCd: 3, tetherCd: 4, range: 6, faction: 'undead', tome: true, int: 5, skills: ['drain', 'curse'],
+    raise: { from: ['bones'], to: 'lichfloor', monster: 'skeleton', every: 8, max: 3, verb: 'raises a skeleton from the bones', color: '#4a2a66',
       warn: 'stirbones', warnMsg: 'The Lich points a bony finger - the bones begin to stir!' },
     shunLight: true, guard: true, loot: 'rare', drops: 'cryptkey', phylactery: 'phylactery', shot: { ch: '*', color: '#b8f', verb: 'blast' } }, // crypt boss
   // The Lich's phylactery (on its dais): while it stands, the Lich re-forms beside it 3 turns after being slain.

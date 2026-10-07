@@ -122,7 +122,9 @@ Object.assign(Game.prototype, {
     // Eyes in the dark: a hidden darkstalker (the Wight) you have a line of sight to, within 8, shows as a pair of faint
     // blinking eyes - you can watch it circle and close in without seeing it.
     const eyes = new Set(this.monsters.filter(m => m.alive && m.darkstalker && this.submerged(m) && dist(m, p) <= 8 && map.hasLos(p, m)).map(m => m.x + ',' + m.y));
-    const danger = new Set((map.dangers || []).filter(d => d.owner.alive).flatMap(d => d.tiles.map(c => c.x + ',' + c.y))); // (boss telegraphs)
+    // (boss telegraphs: shown on every marked tile in your line of sight, even in the dark - you sense the blow coming)
+    const danger = new Set((map.dangers || []).filter(d => d.owner.alive).flatMap(d => d.tiles)
+      .filter(c => map.visible[c.y]?.[c.x] || (dist(c, p) <= 10 && map.hasLos(p, c))).map(c => c.x + ',' + c.y));
 
     const tgt = this.aim, aimOk = tgt && this.aimOk();
     const path = new Set(tgt ? line(p.x, p.y, tgt.x, tgt.y).slice(1, -1).map(c => c.x + ',' + c.y) : []);
@@ -139,7 +141,7 @@ Object.assign(Game.prototype, {
       for (let x = camX; x < camX + viewW; x++) {
         const k = x + ',' + y, vis = map.visible[y][x] || bodyShown.has(k);
         if (eyes.has(k)) { html += '<span class="eyes">"</span>'; continue; } // (a darkstalker, unseen in the dark)
-        if (!vis && !map.seen[y][x]) { html += '<span> </span>'; continue; }
+        if (!vis && !map.seen[y][x]) { html += danger.has(k) ? '<span class="danger"> </span>' : '<span> </span>'; continue; }
         const t = map.get(x, y);
         let ch = t === 'roots' ? rootGlyph(map, x, y) : chars[t] || TILES[t].ch, color = colors[t] || TILES[t].color, bg = TILES[t].bg || bgs[t] || '';
         if (TILES[t].hidden && !map.found[y][x]) { ch = TILES.floor.ch; color = colors.floor || TILES.floor.color; } // unspotted trap
@@ -177,7 +179,7 @@ Object.assign(Game.prototype, {
         const look = g === p && this.gearLook ? heroGearLook(p) : null; // (option: your gear shows on your tile)
         if (actor) { actors.push({ e: g.status ? g : p, ch: g.ch, color: g.color, bg: ebg,
           cls: (scss || '') + (hp ? ' hurt' : '') + (look?.cls ? ' ' + look.cls : ''), hpVars, overlay: look?.html, x, y }); ch = ' '; } // cross -> keyed by you
-        const join = /[─-╿]/.test(ch), tcss = (vis && TILES[t].css ? TILES[t].css + ' ' : '') + (vis && danger.has(k) ? 'danger ' : ''); // tile animation (swelling vent); a boss's marked tiles
+        const join = /[─-╿]/.test(ch), tcss = (vis && TILES[t].css ? TILES[t].css + ' ' : '') + (danger.has(k) ? 'danger ' : ''); // tile animation (swelling vent); a boss's marked tiles
         const cls = (vis ? '' : 'dim ') +(join ? 'join ' : '') + tcss + (!actor && scss || '') + (!actor && hp ? ' hurt' : '') + (!actor && look?.cls ? ' ' + look.cls : ''); // join: box-drawing glyphs
         html += `<span${cls ? ` class="${cls.trim()}"` : ''} style="color:${color}${bg ? ';background:' + bg : ''}${actor ? '' : hpVars}">${join ? `<i>${ch}</i>` : ch}${!actor && look ? look.html : ''}</span>`;
       }

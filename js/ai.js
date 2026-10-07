@@ -251,8 +251,149 @@ function slashFx(g, m, tiles) {
     g.fx.flash(c, '#5a1010');
   });
 }
+// Everyone hostile to m standing on one of the tiles (a telegraphed blow landing).
+const foesOn = (g, m, tiles) => [g.player, ...g.monsters].filter(e => e.alive && e !== m && !e.partOf && g.hostile(m, e) && tiles.some(c => c.x === e.x && c.y === e.y));
+// Tiles in room r (or within 6 of m outside one) that are `t`.
+const tilesNear = (g, m, r, t) => g.map.cells((x, y) => (r ? inRect(r, { x, y }) : dist({ x, y }, m) <= 6) && g.map.get(x, y) === t);
+// Every `stir` tile near m gives up a `monster` (awake, provoked, joining the fight) and turns back into `back`.
+function riseFrom(g, m, r, stir, back, monster) {
+  const spots = tilesNear(g, m, r, stir);
+  spots.forEach(c => {
+    g.map.set(c.x, c.y, back);
+    if (g.occupied(c.x, c.y)) return;
+    g.spawn(MONSTERS[monster], c);
+    Object.assign(g.monsters.at(-1), { awake: true, provoked: true, raisedBy: m, flashCss: { turn: g.turn, css: 'hatch' } });
+  });
+  return spots.length;
+}
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
+  // The Banshee (her chapel): the keen - she draws breath for a turn while the air trembles round her (marked), then
+  // screams: everyone hostile on those tiles is hurt (x1.5) and silenced 2 turns. Her keens alternate: a close one (1-2
+  // tiles - back away) and a far-reaching one (3-4 tiles - get in close, or right out); every 4 turns, 3 once she's
+  // hurt to half. Pinned in melee she flits away (every 5 turns: dissolves and drifts back in 4-6 tiles off, among the
+  // pews). At half health "the dead answer": two ghosts rise beside her. Otherwise she fights you as baseAi chase.
+  banshee(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x], r = g.map.arenas?.find(a => inRect(a.r, m))?.r;
+    const inArea = c => (r ? inRect(r, c) : dist(c, m) <= 6);
+    if (m.keen) { // the scream lands
+      const tiles = m.keen.tiles;
+      clearDanger(g, m.keen); m.keen = null; m.keenCd = m.answered ? 3 : 4;
+      tiles.forEach(c => g.fx.flash(c, '#3a4466'));
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player)) g.log(hit.length ? 'The Banshee shrieks - the sound tears through you!' : 'The Banshee shrieks at no one.', '#dde4ff');
+      hit.forEach(e => { m.attack(e, g, { mult: 1.5, magic: true, verb: 'deafen' }); if (e.alive) applyStatus(e, 'silenced', 2, g); });
+      return true;
+    }
+    if (!m.answered && m.hp <= m.maxHp / 2) {
+      m.answered = true;
+      const spots = shuffle(DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y))).slice(0, 2);
+      spots.forEach(c => { g.spawn(MONSTERS.ghost, c); Object.assign(g.monsters.at(-1), { awake: true, provoked: true, flashCss: { turn: g.turn, css: 'emerge' } }); });
+      if (seen) g.log('The Banshee wails for the dead - and the dead answer!', '#bdf');
+      return true;
+    }
+    if (!t) return false;
+    if (m.keenCd > 0) m.keenCd--;
+    if (m.flitCd > 0) m.flitCd--;
+    if (!m.keenCd && dist(m, t) <= 4 && !isDisabled(m)) { // draws breath
+      m.near = !m.near;
+      const [lo, hi] = m.near ? [1, 2] : [3, 4], tiles = [];
+      for (let y = m.y - hi; y <= m.y + hi; y++) for (let x = m.x - hi; x <= m.x + hi; x++)
+        if (dist({ x, y }, m) >= lo && g.map.walkable(x, y) && g.map.hasLos(m, { x, y })) tiles.push({ x, y });
+      m.keen = markDanger(g, m, tiles);
+      if (seen || t === g.player) g.log(m.near ? 'The Banshee draws a ragged breath - the air around her shivers!' : 'The Banshee throws back her head - her keen will carry far!', '#dde4ff');
+      return true;
+    }
+    if (!m.flitCd && dist(m, t) === 1 && !isDisabled(m)) { // pinned: she flits off among the pews
+      const to = shuffle(g.map.cells((x, y) => inArea({ x, y }) && g.map.walkable(x, y) && !g.occupied(x, y) && dist({ x, y }, t) >= 4 && dist({ x, y }, t) <= 6))[0];
+      if (to) {
+        g.fx.float(m, m.ch, m.color, { css: 'fadeout' });
+        Object.assign(m, to, { flitCd: 5, flashCss: { turn: g.turn, css: 'emerge' } });
+        if (seen) g.log('The Banshee dissolves into mist and drifts away...', '#dde4ff');
+        return true;
+      }
+    }
+    return false;
+  },
+  // The Grave Serpent (its pit): venom spit - it rears up for a turn, marking a line 6 tiles long toward its prey (cut
+  // short by the columns: duck behind one), then sprays it - x1 damage and poison on everyone hostile in it; every 6
+  // turns, when its prey is 2+ tiles off. At half health it sloughs its skin: the shed skins strewn about the pit stir
+  // (a turn's warning) and grave adders wriggle out (3 at most). Its fang and its chase stay (baseAi multibody).
+  serpent(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x], r = g.map.arenas?.find(a => inRect(a.r, m))?.r;
+    if (riseFrom(g, m, r, 'skinstir', 'pitfloor', 'graveadder') && seen) g.log('Grave adders wriggle out of the shed skins!', '#9fd07a');
+    if (!m.sloughed && m.hp <= m.maxHp / 2) {
+      m.sloughed = true;
+      shuffle(tilesNear(g, m, r, 'shedskin').filter(c => !g.occupied(c.x, c.y))).slice(0, 3).forEach(c => g.map.set(c.x, c.y, 'skinstir'));
+      if (seen) g.log('The Grave Serpent writhes - the shed skins about the pit begin to twitch...', '#c8c898');
+    }
+    if (m.spit) { // the spray lands
+      const tiles = m.spit.tiles;
+      clearDanger(g, m.spit); m.spit = null; m.spitCd = 6;
+      tiles.forEach((c, i) => { g.fx.float(c, '≈', '#9fff6a', { css: 'slash', delay: i * 0.05 }); g.fx.flash(c, '#1f4d1f'); });
+      const hit = foesOn(g, m, tiles);
+      if (seen) g.log(hit.length ? 'The Grave Serpent sprays a stream of venom!' : 'Venom spatters the empty ground.', '#9fd07a');
+      hit.forEach(e => m.attack(e, g, { verb: 'spray', status: { poison: 4 } }));
+      return true;
+    }
+    if (m.spitCd > 0) m.spitCd--;
+    if (t && !m.spitCd && dist(m, t) >= 2 && dist(m, t) <= 6 && g.map.hasLos(m, t) && !isDisabled(m)) { // rears up
+      const dx = t.x - m.x, dy = t.y - m.y, k = 6 / Math.max(Math.abs(dx), Math.abs(dy)), tiles = [];
+      for (const c of line(m.x, m.y, m.x + Math.round(dx * k), m.y + Math.round(dy * k)).slice(1)) {
+        const prev = tiles.at(-1) || m;
+        if (!g.map.walkable(c.x, c.y) || !g.map.canStep(prev.x, prev.y, c.x, c.y)) break;
+        tiles.push(c);
+      }
+      m.spit = markDanger(g, m, tiles.filter(c => !bodyParts(m).some(q => q.x === c.x && q.y === c.y)));
+      if (seen || t === g.player) g.log('The Grave Serpent rears up, venom glistening on its fangs!', '#9fd07a');
+      return true;
+    }
+    return false;
+  },
+  // The Lich (its sanctum): grasping dead - it clenches a fist and the floor round its foe crawls (the 3x3 there marked a
+  // turn), then bony hands burst up: x1 (INT) and stuck 2 turns for everyone hostile in it; every 5 turns. Soul tether: hurt
+  // while its phylactery stands, it draws on it every 8 turns (a beam from the dais) and heals 8 - smash it first. At half
+  // health (once) "the legion": every bone heap in the hall stirs (4 at most) and skeletons rise from them next turn.
+  // Its raising, blasts and spells stay (baseAi summoner).
+  lich(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x], r = g.map.arenas?.find(a => inRect(a.r, m))?.r;
+    riseFrom(g, m, r, 'legionbones', 'lichfloor', 'skeleton');
+    if (m.grasp) { // the hands burst up
+      const tiles = m.grasp.tiles;
+      clearDanger(g, m.grasp); m.grasp = null; m.graspCd = 5;
+      tiles.forEach((c, i) => { g.fx.float(c, 'ƒ', '#e8dcc0', { css: 'slash', delay: i * 0.04 }); g.fx.flash(c, '#2a1a3a'); });
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player)) g.log(hit.length ? 'Bony hands burst from the floor and seize hold!' : 'Bony hands claw at empty air and sink back.', '#c8ffb0');
+      hit.forEach(e => { m.attack(e, g, { magic: true, verb: 'claw' }); if (e.alive) applyStatus(e, 'stuck', 2, g); });
+      return true;
+    }
+    if (!m.legion && m.hp <= m.maxHp / 2) {
+      m.legion = true;
+      const heaps = shuffle(tilesNear(g, m, r, 'bones').filter(c => !g.occupied(c.x, c.y))).slice(0, 4);
+      heaps.forEach(c => g.map.set(c.x, c.y, 'legionbones'));
+      if (seen) g.log(heaps.length ? 'The Lich raises both arms: "Rise, my legion!" - every bone in the hall shudders!' : 'The Lich calls for its legion, but no bones answer.', '#c8ffb0');
+      return true;
+    }
+    const ph = g.monsters.find(o => o.alive && o.name === MONSTERS.phylactery.name);
+    if (m.tetherCd > 0) m.tetherCd--;
+    if (ph && !m.tetherCd && m.hp <= m.maxHp - 8 && dist(m, ph) <= 10) {
+      m.tetherCd = 8;
+      g.fx.bolt(ph, m, '~', '#d8a8ff');
+      m.hp = Math.min(m.maxHp, m.hp + 8);
+      g.fx.float(m, '+8', '#d8a8ff');
+      if (seen) g.log('A thread of sickly light runs from the phylactery to the Lich - its wounds knit!', '#d8a8ff');
+      return true;
+    }
+    if (m.graspCd > 0) m.graspCd--;
+    if (t && !m.graspCd && dist(m, t) <= 6 && g.map.hasLos(m, t) && !isDisabled(m) && !m.status.silenced) { // clenches its fist
+      const tiles = [];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (g.map.walkable(t.x + dx, t.y + dy)) tiles.push({ x: t.x + dx, y: t.y + dy });
+      m.grasp = markDanger(g, m, tiles);
+      if (seen || t === g.player) g.log(`The Lich clenches a bony fist - the floor around ${t.obj} begins to crawl!`, '#c8ffb0');
+      return true;
+    }
+    return false;
+  },
   // The Wight (its dark tomb) - a fight over the light. Shrouded on unlit tiles: it regenerates 3 HP a turn and heals by
   // the damage it deals, and past 2 tiles away only its eyes show (darkstalker 2). Exposed in candlelight: no healing,
   // and it takes x1.5 damage (lightWeak, Entity.hurt). Every ~6 turns it goes for the nearest lit candle and reaches for it
@@ -349,7 +490,7 @@ const BOSS_PATTERNS = {
     if (m.swing) { // the blow lands - on whoever is still in the marked tiles
       const tiles = m.swing.tiles;
       clearDanger(g, m.swing); m.swing = null; m.swingCd = 4;
-      const hit = [g.player, ...g.monsters].filter(e => e.alive && e !== m && !e.partOf && g.hostile(m, e) && tiles.some(c => c.x === e.x && c.y === e.y));
+      const hit = foesOn(g, m, tiles);
       slashFx(g, m, tiles);
       if (seen) g.log(hit.length ? "The Death Knight's blade comes crashing down!" : "The Death Knight's blade cleaves empty air.", '#e04040');
       hit.forEach(e => m.attack(e, g, { mult: 2, verb: 'cleave' }));
