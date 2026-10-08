@@ -35,6 +35,7 @@ class Entity {
   // magic: scales with INT instead of ATK - on by default while a skill marked `magic` is being cast (game.casting).
   attack(target, game, { mult = 1, verb = 'hit', pierce = false, crit = false, status = null, magic = !!game.casting?.magic } = {}) {
     if (target.partOf && game.casting && target.partOf.hitByCast === game.castN) return 0; // this skill already hit that Colossus
+    if (this.lunge) lungeAt(this, target, game); // (it darts at its target - hit or miss)
     if (target.status.phased) return game.log(`${this.subj} ${this.verb('strike')} at ${target.obj}, but hit only air.`, '#f9f'), 0;
     if (chance((target.dodge || 0) + target.gearStat('dodge') / 100)) // Slippery (Trickster), silk gear
       return game.log(`${target.subj} ${target.verb('slip')} away from ${this.obj}'s attack!`, '#f9f'), 0;
@@ -45,10 +46,6 @@ class Entity {
     const p = game.player, seen = game.map.visible[target.y]?.[target.x];
     if (this === p || target === p || seen) // monster-vs-monster fights only show up when you can see them
       game.log(`${this.subj} ${this.verb(verb)} ${target.obj} for ${dmg}${isCrit ? ' (critical!)' : ''}.`, target === p ? '#f88' : '#ddd');
-    if (this.lunge) { // (a lunging attacker: darts at its target and snaps back - css lunge)
-      const d = { '0,-1': 'n', '1,-1': 'ne', '1,0': 'e', '1,1': 'se', '0,1': 's', '-1,1': 'sw', '-1,0': 'w', '-1,-1': 'nw' }[Math.sign(target.x - this.x) + ',' + Math.sign(target.y - this.y)];
-      if (d) this.flashCss = { turn: game.turn, css: `lunge lg-${d} lp${game.turn % 2}` }; // (lp: alternates, so back-to-back bites each replay)
-    }
     target.hurt(dmg, game, this);
     const thorns = target.gearStat('thorns'); // (bone gear) striking it in melee hurts
     if (thorns && this.alive && !magic && dist(this, target) <= 1) {
@@ -136,6 +133,11 @@ class Player extends Entity {
 // Stat gains for reaching e.lvl (player and companions): +hpPerLevel HP (default 6), +2 MP, DEF every other level.
 // ATK/INT +1 every atkEvery/intEvery levels - by default casters (cls.caster) gain INT every level and ATK every other,
 // everyone else the reverse. No heal: current HP/MP only go up by what the maximums gained.
+// A lunge (css lunge): e darts toward t and snaps back. lp alternates by turn so back-to-back strikes each replay.
+function lungeAt(e, t, game) {
+  const d = { '0,-1': 'n', '1,-1': 'ne', '1,0': 'e', '1,1': 'se', '0,1': 's', '-1,1': 'sw', '-1,0': 'w', '-1,-1': 'nw' }[Math.sign(t.x - e.x) + ',' + Math.sign(t.y - e.y)];
+  if (d) e.flashCss = { turn: game.turn, css: `lunge lg-${d} lp${game.turn % 2}` };
+}
 // XP needed to go from level lvl to the next.
 const xpToNext = lvl => lvl * 30;
 // Armour soaks at most this share of a hit (DEF is subtracted, but a stack of it can't make you all but untouchable).

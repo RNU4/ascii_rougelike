@@ -898,6 +898,7 @@ const AI = {
     const adj = m.surround ? [m, ...bodyParts(m)].filter(q => dist(q, t) === 1).length : 0; // (surround) parts touching its prey
     if (m.surround && adj >= 4 && !m.surrounding && g.map.visible[m.y]?.[m.x]) g.log(`${m.subj} closes in around ${t.obj}!`, m.color);
     m.surrounding = adj >= 4;
+    if (!chain) [m, ...bodyParts(m)].filter(q => dist(q, t) === 1).forEach(q => lungeAt(q, t, g)); // (every part touching its prey strikes at it: the Colossus's bones press in, a spider's legs stab)
     m.attack(t, g, m.surround ? { mult: 1 + m.surround.bonus * Math.max(0, adj - 1) } : undefined);
     if (m.skirmish && chance(0.6)) m.backoff = 2; // (spiders) strike, then scuttle back
   },
