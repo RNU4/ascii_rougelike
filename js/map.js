@@ -12,6 +12,10 @@ const TILES = {
   tidewater: { ch: '~', color: '#4a8fd0', bg: '#16303a', walk: false, swim: true, name: 'tidal water' },
   glowwater: { ch: '~', color: '#6fffe0', bg: '#0c3a36', walk: false, swim: true, light: 3, lightColor: '80,230,200', name: 'glowing pool' },
   sand:    { ch: '.', color: '#d8c890', walk: true, name: 'sand' },
+  clam:    { ch: '∞', color: '#f0e0d0', bg: '#2a2416', walk: false, name: 'giant clam' }, // the Grotto: bump to pry it open (features.js)
+  clamopen: { ch: '∞', color: '#7a6a5a', bg: '#2a2416', walk: false, name: 'empty clam shell' },
+  strongbox: { ch: '■', color: '#e0b040', bg: '#2a2010', walk: false, name: "smugglers' strongbox" }, // bump: their loot
+  strongboxopen: { ch: '■', color: '#6a5a3a', walk: false, name: 'empty strongbox' },
   // Swamp (overworld). slow: anyone moving onto it loses a turn (monsters standing in it move every other turn).
   bog:       { ch: '~', color: '#5a7f62', bg: '#0e1810', walk: false, swim: true, name: 'bog' }, // murky green-grey: water, not grass
   lily:      { ch: '°', color: '#6aaa4a', bg: '#0e1810', walk: false, swim: true, name: 'lily pads' },

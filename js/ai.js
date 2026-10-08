@@ -268,6 +268,48 @@ function riseFrom(g, m, r, stir, back, monster) {
 }
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
+  // The Drowned Hag (her island in the Flooded Grotto): the tidal surge - the water draws back for a turn while a 3-wide lane
+  // 7 tiles long from her toward her foe is marked, then the wave crashes down it: x1.2 (INT), swept 2 tiles back and a
+  // lost turn for everyone still in it. Every 6 turns, 4 at high tide. At half health "the sea answers": she drags the
+  // tide in (map.tideShift - it starts rising now, flooding the causeways). Her raising, hexes and curse stay (baseAi summoner).
+  hag(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x], tide = g.level.tide;
+    if (m.surge) { // the wave crashes
+      const tiles = m.surge.tiles;
+      clearDanger(g, m.surge); m.surge = null; m.surgeCd = g.tideHigh() ? 4 : 6;
+      tiles.forEach(c => { g.fx.float(c, '≈', '#8fe8ff', { css: 'slash', delay: dist(c, m) * 0.05 }); g.fx.flash(c, '#12405a'); });
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player)) g.log(hit.length ? 'A wall of black water crashes down the lane!' : 'The wave crashes down on empty ground.', m.color);
+      hit.forEach(e => {
+        m.attack(e, g, { mult: 1.2, magic: true, verb: 'engulf' });
+        if (!e.alive) return;
+        knockback(g, m, e, 2);
+        if (e === g.player) g.skipTurn = true; else applyStatus(e, 'stun', 1, g, true);
+      });
+      return true;
+    }
+    if (tide && !m.deep && m.hp <= m.maxHp / 2) { // the sea answers: the tide starts rising now
+      m.deep = true;
+      const P = tide.low + tide.high + 2 * TIDE_WAVES;
+      g.map.tideShift = (((tide.low - g.turn) % P) + P) % P;
+      g.log('The Drowned Hag shrieks - and the sea answers. The tide comes rushing in!', m.color);
+      return true;
+    }
+    if (m.surgeCd > 0) m.surgeCd--;
+    if (t && !m.surgeCd && dist(m, t) <= 7 && g.map.hasLos(m, t) && !isDisabled(m)) { // the water draws back
+      const dx = t.x - m.x, dy = t.y - m.y, k = 7 / Math.max(Math.abs(dx), Math.abs(dy)), sx = Math.sign(dx), sy = Math.sign(dy);
+      const wet = (x, y) => g.map.walkable(x, y) || !!TILES[g.map.get(x, y)].swim, tiles = [], seenAt = new Set();
+      for (const c of line(m.x, m.y, m.x + Math.round(dx * k), m.y + Math.round(dy * k)).slice(1))
+        for (const o of [0, 1, -1]) {
+          const x = c.x - sy * o, y = c.y + sx * o; // (the lane: the line and a tile either side of it)
+          if (wet(x, y) && !seenAt.has(x + ',' + y)) { seenAt.add(x + ',' + y); tiles.push({ x, y }); }
+        }
+      m.surge = markDanger(g, m, tiles);
+      if (seen || t === g.player) g.log('The Hag raises her arms - the water draws back as a wave rears up behind her!', m.color);
+      return true;
+    }
+    return false;
+  },
   // The Mire Mother (her pool in the Blackwater Mire): a huge leech, unseen under the bog (submerge) unless right beside
   // you. Every 5 turns, when you're within 8 and standing by open water, the bog beside you churns (the 3x3 round you
   // marked) - next turn she lunges up out of it: x1.5 and stuck a turn for everyone still there, draining what she bites.

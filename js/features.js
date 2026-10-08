@@ -461,6 +461,31 @@ TILES.cauldron.onBump = (g, x, y) => {
 };
 TILES.cauldroncold.onBump = g => g.log('The cauldron has gone cold.', '#888');
 
+// Giant clam (the Grotto): pry it open - a pearl-set piece of coral gear (45%), a crab that was hiding inside (30%), or nothing.
+TILES.clam.onBump = (g, x, y) => {
+  g.map.set(x, y, 'clamopen');
+  const r = Math.random();
+  if (r < 0.45) {
+    g.items.push({ ...makeGear(g.depth + 1, 'magic', 'coral'), x: g.player.x, y: g.player.y });
+    g.log('You prise the giant clam open - something gleams among the pearls!', '#f0e0d0');
+    g.lookHere();
+  } else if (r < 0.75) {
+    g.map.set(x, y, 'sand');
+    g.spawn(MONSTERS.crab, { x, y });
+    Object.assign(g.monsters.at(-1), { awake: true, flashCss: { turn: g.turn, css: 'hatch' } });
+    g.log('The clam snaps open - and a giant crab scuttles out of it!', '#e63');
+  } else g.log('You prise the giant clam open. Empty.', '#999');
+};
+TILES.clamopen.onBump = g => g.log('An empty clam shell.', '#888');
+// The smugglers' strongbox (the Grotto): their plunder - a rare piece of coral gear.
+TILES.strongbox.onBump = (g, x, y) => {
+  g.map.set(x, y, 'strongboxopen');
+  g.items.push({ ...makeGear(g.depth + 1, 'rare', 'coral'), x: g.player.x, y: g.player.y });
+  g.log("You force the smugglers' strongbox - their best plunder is inside.", '#e0b040');
+  g.lookHere();
+};
+TILES.strongboxopen.onBump = g => g.log('The strongbox is empty.', '#888');
+
 // Mold patch: stepping on it releases poisonous spores.
 TILES.moldpatch.onEnter = (g, x, y) => {
   g.log('Spores burst from the mold underfoot!', '#9c6');
@@ -507,7 +532,7 @@ function growSpread(g, s) {
 // tidal tiles farthest from dry land flood first (the middle of a causeway), the ones touching land last.
 const TIDE_WAVES = 4;
 function tidePhase(g, t) {
-  const W = TIDE_WAVES, ph = g.turn % (t.low + t.high + 2 * W);
+  const W = TIDE_WAVES, ph = (g.turn + (g.map.tideShift || 0)) % (t.low + t.high + 2 * W); // tideShift: the Drowned Hag hurrying it in
   if (ph < t.low) return { level: 0, name: 'LOW', left: t.low - ph };
   if (ph < t.low + W) return { level: ph - t.low + 1, name: 'RISING', left: t.low + W - ph };
   if (ph < t.low + W + t.high) return { level: W, name: 'HIGH', left: t.low + W + t.high - ph };

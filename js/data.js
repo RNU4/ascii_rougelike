@@ -89,10 +89,13 @@ const MONSTERS = {
   drowned:  { name: 'drowned one', ch: 'd', color: '#6ad', hp: 14, atk: 6, def: 1, xp: 10, ai: 'lurker', swim: true, submerge: true },
   // Grotto boss: holds the island that the way to the stairs crosses; calls drowned ones up from the water around her,
   // faster at high tide (highTideEvery). (Any boss can also bar the stairs with `seals: 'message'` - see takeStairs.)
-  hag:      { name: 'Drowned Hag', ch: 'H', color: '#5fd8c0', hp: 55, atk: 9, def: 2, xp: 55, ai: 'summoner', range: 6, guard: true, loot: 'rare',  tome: true, int: 5, skills: ['curse'],
+  hag:      { name: 'Drowned Hag', ch: 'H', color: '#5fd8c0', hp: 80, atk: 9, def: 2, xp: 55, ai: 'boss', pattern: 'hag', baseAi: 'summoner', surgeCd: 3, range: 6, guard: true, loot: 'rare', lootPool: 'coral', tome: true, int: 7, skills: ['curse'],
     shot: { ch: '~', color: '#5fd8c0', verb: 'hex', status: { poison: 3 } },
     raise: { from: ['water', 'tidewater'], monster: 'drowned', every: 7, highTideEvery: 3, max: 3, verb: 'calls a drowned one up from the water', color: '#1a4a4a',
     warn: 'stirwater', warnMsg: 'The water churns beside the Hag...' } },
+  // The smugglers' cove (the Grotto): a crew of cutthroats round their strongbox.
+  smuggler: { name: 'smuggler', ch: 'p', color: '#c8a070', hp: 14, atk: 6, def: 1, xp: 10, ai: 'chase' },
+  smugglerbow: { name: 'smuggler crossbowman', ch: 'p', color: '#a88a60', hp: 10, atk: 5, def: 0, xp: 10, ai: 'ranged', range: 5 },
   // 3: forgotten crypt - a skeleton army (lots of rank-and-file undead) led by a few strong mini-bosses, each with an escort.
   skeleton: { name: 'skeleton', ch: 'z', color: '#eee', hp: 14, atk: 7, def: 2, xp: 10, ai: 'chase', faction: 'undead' },
   ghost:    { name: 'ghost', ch: 'W', color: '#bdf', hp: 10, atk: 6, def: 1, xp: 12, ai: 'phase', shunLight: true, faction: 'undead', fly: true }, // fly: spirits float over webs, traps and water

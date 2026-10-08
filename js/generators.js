@@ -1207,24 +1207,28 @@ function addTidalCave(map, from) {
     const [a1, a2] = shuffle(cave.cells);
     map.loot.push({ ...a1, rarity: 'rare' }, { ...a2, rarity: 'magic' });
     map.reserved.push(cavernBox(cave));
+    map.caverns.push(Object.assign(cave, { tidal: true })); // (furnishGrotto puts clams in it)
     return true;
   }
   return false;
 }
 
-// Grotto special caverns: a crab nest on a sandbar, a half-sunken shrine, a drowned adventurers' camp and a
-// glowing pool. Each claims one cavern (not the lake).
+// Grotto special caverns: a crab nest on a sandbar, a half-sunken shrine, a drowned adventurers' camp, a glowing pool and
+// the smugglers' cove. Each claims one cavern (not the lake). Giant clams (pry them open) in the nest and the tidal caves.
 function furnishGrotto(map) {
   const floorOf = c => c.cells.filter(p => map.get(p.x, p.y) === 'floor');
   const heart = c => floorOf(c).reduce((a, b) => (dist(b, c) < dist(a, c) ? b : a), floorOf(c)[0]);
   const around = (c, k, monster) => shuffle(floorOf(c).filter(p => dist(p, c) >= 2)).slice(0, k).forEach(p => map.spawns.push({ ...p, monster }));
-  const [nest, shrine, camp, pool] = shuffle(map.caverns.filter(c => c !== map.lake && floorOf(c).length >= 14));
+  const [nest, shrine, camp, pool, cove] = shuffle(map.caverns.filter(c => c !== map.lake && floorOf(c).length >= 14));
+  const clams = (c, n) => shuffle(c.cells.filter(p => map.get(p.x, p.y) === 'sand' && DIRS.every(([dx, dy]) => map.get(p.x + dx, p.y + dy) !== 'clam')))
+    .slice(0, n).forEach(p => map.set(p.x, p.y, 'clam')); // giant clams (TILES.clam.onBump: pry one open)
   // Crab nest: a sandbar ringed by shallows at the walls, crabs guarding a find.
   if (nest) {
     for (const p of floorOf(nest)) map.set(p.x, p.y, DIRS.slice(0, 4).some(([dx, dy]) => map.get(p.x + dx, p.y + dy) === 'wall') ? 'shallow' : 'sand');
     around(nest, 3, 'crab');
     const s = pick(nest.cells.filter(p => map.get(p.x, p.y) === 'sand'));
     if (s) map.loot.push({ ...s, rarity: 'magic' });
+    clams(nest, 2);
     map.reserved.push(cavernBox(nest));
   }
   // Sunken shrine: a restoring altar on a flooded floor, two deep pools with drowned ones in them.
@@ -1263,9 +1267,22 @@ function furnishGrotto(map) {
     if (s) map.loot.push({ ...s });
     map.reserved.push(cavernBox(pool));
   }
-  // One or two tidal caves off ordinary caverns, and crabs foraging out on the tidal flats.
+  // Smugglers' cove: their hideout - sand underfoot, crates and barrels stacked along the walls, a strongbox in the middle
+  // (TILES.strongbox.onBump: a rare piece of coral gear) and the crew round it.
+  const k = cove && heart(cove);
+  if (k) {
+    floorOf(cove).forEach(p => map.set(p.x, p.y, 'sand'));
+    shuffle(cove.cells.filter(p => map.get(p.x, p.y) === 'sand' && dist(p, k) >= 2 && DIRS.slice(0, 4).some(([dx, dy]) => map.get(p.x + dx, p.y + dy) === 'wall')))
+      .slice(0, 6).forEach((p, i) => map.set(p.x, p.y, i % 2 ? 'barrel' : 'crate'));
+    map.set(k.x, k.y, 'strongbox');
+    shuffle(cove.cells.filter(p => map.get(p.x, p.y) === 'sand' && dist(p, k) >= 1 && dist(p, k) <= 3)).slice(0, 4)
+      .forEach((p, i) => map.spawns.push({ ...p, monster: i < 2 ? 'smuggler' : 'smugglerbow' }));
+    map.reserved.push(cavernBox(cove));
+  }
+  // One or two tidal caves off ordinary caverns (clams in them), and crabs foraging out on the tidal flats.
   let caves = rand(1, 2);
-  for (const c of shuffle(map.caverns.filter(c => ![map.lake, nest, shrine, camp, pool].includes(c)))) if (caves && addTidalCave(map, c)) caves--;
+  for (const c of shuffle(map.caverns.filter(c => ![map.lake, nest, shrine, camp, pool, cove].includes(c)))) if (caves && addTidalCave(map, c)) caves--;
+  map.caverns.filter(c => c.tidal).forEach(c => clams(c, 2));
   shuffle(map.cells((x, y) => map.get(x, y) === 'tideflat')).slice(0, 2).forEach(p => map.spawns.push({ ...p, monster: 'crab' }));
   return joinAcrossWater(map);
 }
