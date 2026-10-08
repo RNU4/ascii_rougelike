@@ -68,9 +68,11 @@
   /* Lunge (monster field `lunge`, flashCss 'lunge lg-<dir>'): the attacker darts at its target and snaps back; a bite
      mark (float css bite) snaps shut on the target. */
   :is(#map.square, #actors) span.lunge { animation: lunge 0.3s ease-out; }
+  :is(#map.square, #actors) span.lunge.lp1 { animation-name: lunge2; } /* (alternate turns: a bite the turn after a bite still replays) */
   span.lg-n { --lx: 0; --ly: -1; } span.lg-ne { --lx: 1; --ly: -1; } span.lg-e { --lx: 1; --ly: 0; } span.lg-se { --lx: 1; --ly: 1; }
   span.lg-s { --lx: 0; --ly: 1; } span.lg-sw { --lx: -1; --ly: 1; } span.lg-w { --lx: -1; --ly: 0; } span.lg-nw { --lx: -1; --ly: -1; }
   @keyframes lunge { 0% { transform: none; } 35% { transform: translate(calc(var(--lx) * 0.55em), calc(var(--ly) * 0.55em)) scale(1.2); } 100% { transform: none; } }
+  @keyframes lunge2 { 0% { transform: none; } 35% { transform: translate(calc(var(--lx) * 0.55em), calc(var(--ly) * 0.55em)) scale(1.2); } 100% { transform: none; } }
   #floats span.bite { font-family: "IBM BIOS", Consolas, monospace; font-weight: normal; height: 1em; text-shadow: 0 0 0.3em #ff6080; animation: bite 0.35s ease-out both; }
   @keyframes bite { 0% { transform: scale(1.6, 0.3); opacity: 0; } 40% { transform: scale(1.1, 1); opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
   :is(#map.square, #actors) span.hatch { animation: hatch 0.35s ease-out both; }
