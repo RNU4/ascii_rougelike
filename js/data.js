@@ -54,7 +54,7 @@ const MONSTERS = {
   leech:    { name: 'giant leech', ch: 'l', color: '#b0606a', hp: 6, atk: 3, def: 0, xp: 3, ai: 'lurker', swim: true, submerge: true, drain: true, corpse: null },
   frog:     { name: 'bog frog', ch: 'f', color: '#8ac04a', hp: 5, atk: 2, def: 0, xp: 2, ai: 'erratic', swim: true, corpse: null },
   swamprat: { name: 'swamp rat', ch: 'r', color: '#9a8a58', hp: 4, atk: 2, def: 0, xp: 2, ai: 'chase' },
-  viper:    { name: 'marsh viper', ch: 's', color: '#7c4', hp: 6, atk: 3, def: 0, xp: 4, ai: 'chase', onHit: { poison: 3 }, corpse: null },
+  viper:    { name: 'marsh viper', ch: 's', lunge: true, color: '#7c4', hp: 6, atk: 3, def: 0, xp: 4, ai: 'chase', onHit: { poison: 3 }, corpse: null },
   // The Mire Mother (the Blackwater Mire's boss, in her pool - addMireLair): a monstrous leech under the bog. See BOSS_PATTERNS.miremother.
   miremother: { name: 'Mire Mother', ch: 'Θ', color: '#ff7a90', hp: 55, atk: 6, def: 1, xp: 50, ai: 'boss', pattern: 'miremother', baseAi: 'multibody',
     size: 7, part: 'mirepart', form: 'chain', aquatic: true, lunge: true, swim: true, drain: true, churnCd: 2, alwaysAwake: true, guard: true,
@@ -111,9 +111,9 @@ const MONSTERS = {
   // Grave Serpent (crypt mini-boss, its own pit): a long chain-form multibody (see Bone Colossus). fang: a special bite
   // every `every` turns - `mult` x damage plus `status`.
   graveserpent: { name: 'Grave Serpent', ch: '♦', color: '#9fd07a', hp: 110, atk: 13, def: 2, xp: 45, ai: 'boss', pattern: 'serpent', baseAi: 'multibody', faction: 'undead', spitCd: 3,
-    size: 8, part: 'serpentpart', form: 'chain',
+    size: 8, part: 'serpentpart', form: 'chain', lunge: true,
     fang: { every: 5, mult: 2, status: { poison: 4 }, msg: 'The Grave Serpent rears back and sinks its fangs in!' }, remains: 'bones', shedMsg: 'A coil of the Grave Serpent goes limp!', loot: 'rare' },
-  graveadder: { name: 'grave adder', ch: 's', color: '#b8e08a', hp: 7, atk: 4, def: 0, xp: 6, ai: 'fast', faction: 'undead', onHit: { poison: 3 } }, // (out of the Serpent's shed skins)
+  graveadder: { name: 'grave adder', ch: 's', lunge: true, color: '#b8e08a', hp: 7, atk: 4, def: 0, xp: 6, ai: 'fast', faction: 'undead', onHit: { poison: 3 } }, // (out of the Serpent's shed skins)
   serpentpart: { name: 'Grave Serpent', ch: 'o', color: '#6f9f52', hp: 1, atk: 0, def: 2, xp: 0, ai: 'segment', faction: 'undead', corpse: null },
   // Wight: its touch curses you (-3 DEF) and it heals by the damage it deals.
   wight:    { name: 'Wight', ch: 'V', color: '#9fc27a', hp: 95, atk: 13, def: 3, xp: 30, ai: 'boss', pattern: 'wight', baseAi: 'chase', faction: 'undead',
@@ -136,7 +136,7 @@ const MONSTERS = {
   // Bone Worm (Ossuary): a chain-form multibody (see Bone Colossus) with a poison bite that dives into bone piles when
   // hurt and bursts up again near you (`burrow`, tryBurrow in ai.js).
   boneworm: { name: 'bone worm', ch: '◙', color: '#e8dcb0', hp: 40, atk: 6, def: 1, xp: 40, ai: 'multibody', faction: 'undead',
-    size: 6, part: 'wormpart', form: 'chain', burrow: true, onHit: { poison: 3 }, remains: 'bones', shedMsg: 'Vertebrae scatter from the bone worm!', loot: 'magic', lootPool: 'bone' },
+    size: 6, part: 'wormpart', form: 'chain', lunge: true, burrow: true, onHit: { poison: 3 }, remains: 'bones', shedMsg: 'Vertebrae scatter from the bone worm!', loot: 'magic', lootPool: 'bone' },
   wormpart: { name: 'bone worm', ch: '○', color: '#cfc29a', hp: 1, atk: 0, def: 1, xp: 0, ai: 'segment', faction: 'undead', corpse: null },
   // Giant spiders: rigid multibodies (form 'rigid': legs with home slots round the body - BODY_LAYOUTS - walking in an
   // alternating gait, folding away where there's no room, torn off as they're hurt). pounce: a leap onto prey within
