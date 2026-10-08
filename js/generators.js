@@ -680,8 +680,8 @@ function genGearTest(w, h) {
   const map = new GameMap(w, h);
   carveRect(map, 2, 2, w - 4, h - 4);
   map.start = { x: 4, y: h >> 1 };
-  const rows = [POOL_BASES.bone.slice(0, 6), POOL_BASES.bone.slice(6), POOL_BASES.hive];
-  rows.forEach((set, r) => set.forEach((b, i) => map.loot.push({ x: 8 + i * 2, y: 4 + r * 3, base: b.name })));
+  const rows = Object.values(POOL_BASES).flatMap(set => [set.slice(0, 6), set.slice(6)]).filter(r => r.length); // a row per set (6 a row)
+  rows.forEach((set, r) => set.forEach((b, i) => map.loot.push({ x: 8 + i * 2, y: 4 + r * 2, base: b.name })));
   return placeTorches(map, 4, 4);
 }
 

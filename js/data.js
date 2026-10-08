@@ -297,8 +297,8 @@ const EXTRA_FLOORS = {
     gen: (w, h) => genBossTest(w, h), size: [110, 52], groups: [], count: 0, items: 0, trial: null, noUp: true, chars: { wall: '#' },
   },
   geartest: { // every exclusive gear piece laid out to try on (genGearTest)
-    name: 'Gear test room', depth: 3, intro: 'A test room: the bone armour set, the bone relic set and the silk set, laid out in rows.',
-    gen: (w, h) => genGearTest(w, h), size: [26, 14], fov: 40, colors: { floor: '#3e3a30' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
+    name: 'Gear test room', depth: 3, intro: 'A test room: every exclusive gear set (bone, silk, reed, coral, fungal, crystal), a row each.',
+    gen: (w, h) => genGearTest(w, h), size: [26, 24], fov: 40, colors: { floor: '#3e3a30' }, chars: { wall: '#' }, monsters: ['spiderling'], count: 0, items: 0,
   },
   spidertest: { // a small arena for trying the giant spiders (genSpiderTest)
     name: 'Spider test room', depth: 4, intro: 'A test room: the Broodmother and a giant spider.', gen: (w, h) => genSpiderTest(w, h),
