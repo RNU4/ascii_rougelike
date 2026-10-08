@@ -301,7 +301,7 @@ const BOSS_PATTERNS = {
       tiles.forEach((c, i) => { g.fx.float(c, '*', '#d0faff', { css: 'slash', delay: (dist(c, m) - 1) * 0.08 }); g.fx.flash(c, '#1a4a6a'); });
       const hit = foesOn(g, m, tiles);
       if (seen || hit.includes(g.player)) g.log(hit.length ? 'Crystal shards burst out of the Guardian!' : 'Crystal shards burst out of the Guardian and shatter on the floor.', m.color);
-      hit.forEach(e => m.attack(e, g, { mult: 1.5, verb: 'shred' }));
+      hit.forEach(e => m.attack(e, g, { mult: 1.5, verb: 'shred', lunge: false })); // (a burst all round it, not a blow)
       return true;
     }
     if (m.novaCd > 0) m.novaCd--;
@@ -514,7 +514,7 @@ const BOSS_PATTERNS = {
       tiles.forEach((c, i) => { g.fx.float(c, '≈', '#9fff6a', { css: 'slash', delay: i * 0.05 }); g.fx.flash(c, '#1f4d1f'); });
       const hit = foesOn(g, m, tiles);
       if (seen) g.log(hit.length ? 'The Grave Serpent sprays a stream of venom!' : 'Venom spatters the empty ground.', '#9fd07a');
-      hit.forEach(e => m.attack(e, g, { verb: 'spray', status: { poison: 4 } }));
+      hit.forEach(e => m.attack(e, g, { verb: 'spray', status: { poison: 4 }, lunge: false })); // (a spray, not a bite)
       return true;
     }
     if (m.spitCd > 0) m.spitCd--;

@@ -33,9 +33,11 @@ class Entity {
 
   // Returns damage dealt. `status` (or the attacker's onHit) is applied to the target on hit.
   // magic: scales with INT instead of ATK - on by default while a skill marked `magic` is being cast (game.casting).
-  attack(target, game, { mult = 1, verb = 'hit', pierce = false, crit = false, status = null, magic = !!game.casting?.magic } = {}) {
+  // lunge: whether the attacker darts at its target (css lunge) - by default a monster's melee blow (adjacent, not a spell), or
+  // always for a template with lunge: true (the snakes); lunge: false (template or call) never - an area blast, say.
+  attack(target, game, { mult = 1, verb = 'hit', pierce = false, crit = false, status = null, magic = !!game.casting?.magic, lunge } = {}) {
     if (target.partOf && game.casting && target.partOf.hitByCast === game.castN) return 0; // this skill already hit that Colossus
-    if (this.lunge) lungeAt(this, target, game); // (it darts at its target - hit or miss)
+    if (lunge ?? (this.lunge ?? (this !== game.player && !this.partOf && !magic && dist(this, target) === 1))) lungeAt(this, target, game); // (hit or miss)
     if (target.status.phased) return game.log(`${this.subj} ${this.verb('strike')} at ${target.obj}, but hit only air.`, '#f9f'), 0;
     if (chance((target.dodge || 0) + target.gearStat('dodge') / 100)) // Slippery (Trickster), silk gear
       return game.log(`${target.subj} ${target.verb('slip')} away from ${this.obj}'s attack!`, '#f9f'), 0;
