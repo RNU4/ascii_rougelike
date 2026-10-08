@@ -197,6 +197,7 @@ function ossuaryChambers(area, max = 6, ws = [5, 5, 7, 7, 9], hs = [3, 5, 5, 7],
 const WARREN_STYLES = {
   bone: { wall: 'bonewall', crack: 'crackedbone', litter: 'bones', litterChance: 0.35, webs: 0.7, spawn: 'skeleton', big: 'webspinner', pool: 'bone' },
   silk: { wall: 'silkwall', crack: 'thicksilk', litter: 'silkfloor', litterChance: 0.5, webs: 0.5, spawn: 'spiderling', big: 'webspinner', pool: 'hive' },
+  crystal: { wall: 'crystalwall', crack: 'crackedcrystal', litter: 'shards', litterChance: 0.2, webs: 0, spawn: 'prism', big: 'golem', pool: 'crystal' },
 };
 // Carve room c (its rect is the bounding box) in a shape. Every shape keeps the middle row and column open, so passages
 // aimed at the middle always get in. rect | round (ellipse) | cross (4 arms) | L (one corner missing) |
@@ -1472,6 +1473,51 @@ function genMaze(w, h, { chambers = 10, loops = 150, spacing = 2, sparse = 0 } =
 }
 
 // Huge pillared hall with broken inner walls.
+// The Crystal Sanctum (LEVELS[5], the last floor): crystal galleries built like the Ossuary (WARREN_STYLES.crystal: crystal walls,
+// shard litter, prism eyes, a golem in the biggest gallery, two vaults behind cracked crystal) round the Crystal Guardian's
+// throne hall (17x11, in a far corner, its own boss doors, locking - map.arenas) with the Crystal of Ages at its far end (map.stairs:
+// a `final` level puts the Crystal there). Crystal clusters light half the galleries; crystal pylons (rooted, AI.pylon) stand in three.
+function genSanctum(w, h) { return untilJoined(() => sanctumOnce(w, h)); }
+function sanctumOnce(w, h) {
+  const map = new GameMap(w, h), area = { x: 2, y: 2, w: w - 4, h: h - 4 }, S = WARREN_STYLES.crystal;
+  const hall = { w: ARENA.w, h: ARENA.h, shape: 'rect' };
+  Object.assign(hall, { x: pick([area.x + 1, area.x + area.w - hall.w - 1]), y: pick([area.y + 1, area.y + area.h - hall.h - 1]) });
+  let cham = [];
+  for (let tries = 0; tries < 10 && cham.length < 9; tries++) cham = ossuaryChambers(area, 13, [5, 7, 7, 9, 9], [5, 5, 7, 7], [hall]);
+  cham.unshift(...cham.splice(cham.indexOf(cham.reduce((a, b) => (dist(roomMid(b), roomMid(hall)) > dist(roomMid(a), roomMid(hall)) ? b : a))), 1));
+  buildOssuary(map, cham, roomMid, [], null, S);
+  map.spawns = map.spawns.filter(s => !inRect(hall, s)); // (the hall is the Guardian's alone)
+  map.loot = map.loot.filter(l => !inRect(hall, l));
+  for (let i = 0; i < 2; i++) addSecretRoom(map, cham.filter(c => c !== hall), roomMid, area, S);
+  map.start = roomMid(cham[0]);
+  // The throne hall: prism floor, the Guardian in the middle, the Crystal of Ages at the far end between two clusters.
+  for (let y = hall.y; y < hall.y + hall.h; y++) for (let x = hall.x; x < hall.x + hall.w; x++) if (map.walkable(x, y)) map.set(x, y, 'prismfloor');
+  const hm = roomMid(hall), dir = hall.x + (hall.w >> 1) < w / 2 ? -1 : 1; // the Crystal: on the hall's outer side
+  map.stairs = { x: dir < 0 ? hall.x + 1 : hall.x + hall.w - 2, y: hm.y };
+  for (const dy of [-2, 2]) map.set(map.stairs.x, hm.y + dy, 'crystalcluster');
+  map.bossSpot = hm;
+  map.arenas = [{ r: hall, state: 'ready' }];
+  addDoors(map, hall, 1, 'bossdoor');
+  map.noSpawn = grid(w, h, false);
+  for (let y = hall.y; y < hall.y + hall.h; y++) for (let x = hall.x; x < hall.x + hall.w; x++) map.noSpawn[y][x] = true;
+  // Crystal clusters (light) on the walls of half the galleries, pylons in three: kept only if every gallery stays reachable.
+  const open = (x, y) => map.walkable(x, y) || !!TILES[map.get(x, y)].breakable;
+  const put = (p, tile) => {
+    const was = map.get(p.x, p.y);
+    map.set(p.x, p.y, tile);
+    const d = map.distanceFrom(map.start.x, map.start.y, open);
+    if (cham.some(c => d[roomMid(c).y][roomMid(c).x] === Infinity)) map.set(p.x, p.y, was);
+  };
+  const galleries = cham.slice(1).filter(c => c !== hall);
+  for (const c of galleries) {
+    const m = roomMid(c), offAxis = (x, y) => inRect(c, { x, y }) && map.walkable(x, y) && x !== m.x && y !== m.y;
+    if (chance(0.5)) { const p = pick(map.cells((x, y) => offAxis(x, y) && DIRS.slice(0, 4).some(([dx, dy]) => map.get(x + dx, y + dy) === S.wall))); if (p) put(p, 'crystalcluster'); }
+  }
+  shuffle(galleries.filter(c => c.w >= 5 && c.h >= 5)).slice(0, 3).forEach(c => map.spawns.unshift({ x: roomMid(c).x + 1, y: roomMid(c).y + 1, monster: 'pylon' }));
+  map.reserved.push(...cham);
+  return map;
+}
+
 function genHall(w, h) {
   const map = new GameMap(w, h);
   carveRect(map, 2, 2, w - 4, h - 4);

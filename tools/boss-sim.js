@@ -28,20 +28,23 @@ function simBoss(cls, bossName, lvl, { items = true, pieces, trace = null, floor
   const ranged = cls.ranged || cls.support;
   const danger = () => new Set((g.map.dangers || []).filter(d => d.owner.alive).flatMap(d => d.tiles.map(c => c.x + ',' + c.y)));
   for (let it = 0; it < 1500 && g.state === 'play' && !(boss.hp <= 0 && !boss.underground) && g.turn < 600; it++) {
-    const foes = g.monsters.filter(m => m.alive && !m.ally && g.hostile(p, m) && inside(m) && g.seesMonster(m) && (!m.rooted || m === boss))
-      .sort((a, b) => dist(a, p) - dist(b, p));
+    const foes = g.monsters.filter(m => m.alive && !m.ally && g.hostile(p, m) && inside(m) && (g.seesMonster(m) || m.rooted && boss.status.phased) && (!m.rooted || m === boss || boss.status.phased))
+      .sort((a, b) => (boss.status.phased && (!!b.rooted - !!a.rooted)) || dist(a, p) - dist(b, p)); // (a shielded boss: smash what feeds the shield first)
     const ph = g.monsters.find(m => m.alive && m.name === 'phylactery');
     const foe = foes[0] || (ph && inside(ph) ? ph : null);
     g.act(() => {
       const dz = danger();
-      if (dz.has(p.x + ',' + p.y)) { // get off a marked tile
-        const out = shuffle(DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy }))).find(c => !dz.has(c.x + ',' + c.y) && g.moveTo(p, c.x, c.y));
-        if (out) return true;
+      if (dz.has(p.x + ',' + p.y)) { // get off a marked tile - or at least further from whoever marked it
+        const owner = (g.map.dangers || []).find(d => d.owner.alive && d.tiles.some(c => c.x === p.x && c.y === p.y))?.owner;
+        const steps = shuffle(DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy })));
+        if (steps.find(c => !dz.has(c.x + ',' + c.y) && g.moveTo(p, c.x, c.y))) return true;
+        if (owner && steps.filter(c => dist(c, owner) > dist(p, owner)).find(c => g.moveTo(p, c.x, c.y))) return true;
       }
       if (p.hp < p.maxHp * 0.35 && p.inv.some(i => i.heals) && g.quaff()) return true;
-      if (foe && aiCast(g, p, foe)) return true;
-      if (foe && dist(p, foe) === 1) return (ranged && g.stepAway(p, foe)) || (p.attack(foe, g), true);
-      if (foe && ranged && dist(p, foe) <= 5 && g.map.hasLos(p, foe)) return true;
+      const runFor = foe && foe.rooted && foe !== boss && boss.status.phased && dist(p, foe) > (ranged ? 5 : 1); // (shielded boss: go and smash what feeds it)
+      if (foe && !runFor && aiCast(g, p, foe)) return true;
+      if (foe && dist(p, foe) === 1) return (ranged && !foe.rooted && g.stepAway(p, foe)) || (p.attack(foe, g), true);
+      if (foe && !runFor && ranged && dist(p, foe) <= 5 && g.map.hasLos(p, foe)) return true;
       const goal = foe || (g.seesMonster(boss) ? boss : approach);
       const dm = g.map.distanceFrom(goal.x, goal.y, (x, y) => g.map.passable(x, y));
       DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy })).filter(c => dm[c.y]?.[c.x] < dm[p.y][p.x] && !dz.has(c.x + ',' + c.y))

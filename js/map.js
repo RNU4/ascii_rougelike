@@ -175,6 +175,13 @@ const TILES = {
   eggswell:  { ch: 'O', color: '#f4ff90', bg: '#2a3010', walk: false, css: 'swell', burnsTo: 'silkfire', name: 'swelling egg sac' },
   crackedbone: { ch: '%', color: '#c4a870', bg: '#33291a', walk: false, opaque: true, breakable: true, name: 'cracked bone wall',
     breakTo: 'bones', hitMsg: 'You strike the cracked bone wall. It shudders... ', breakMsg: 'The cracked wall gives way in a clatter of bones - there is a hidden chamber beyond!' },
+  // The Crystal Sanctum (genSanctum): crystal galleries.
+  crystalwall: { ch: '▓', color: '#7fd8ff', bg: '#10283a', walk: false, opaque: true, name: 'crystal wall' },
+  crackedcrystal: { ch: '▒', color: '#c0f4ff', bg: '#1c3a50', walk: false, opaque: true, breakable: true, name: 'cracked crystal',
+    breakTo: 'shards', hitMsg: 'You strike the cracked crystal. It rings and splinters... ', breakMsg: 'The crystal shatters - a hidden vault glitters beyond!' },
+  shards:    { ch: ',', color: '#a0e8ff', walk: true, name: 'crystal shards' },
+  crystalcluster: { ch: '*', color: '#d0faff', bg: '#10283a', walk: false, light: 3, lightColor: '120,220,255', name: 'crystal cluster' },
+  prismfloor: { ch: '.', color: '#a0c8ff', bg: '#142438', walk: true, name: 'prism floor' }, // the Guardian's hall
   rubble:   { ch: ':', color: '#a89a80', walk: false, opaque: true },
   pillar:   { ch: 'I', color: '#e8e4d8', walk: false, opaque: true, passLight: true }, // blocks sight, not light
 };

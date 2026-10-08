@@ -187,7 +187,13 @@ const MONSTERS = {
   golem:    { name: 'crystal golem', ch: 'O', color: '#7ef', hp: 35, atk: 14, def: 5, xp: 25, ai: 'slow' },
   wraith:   { name: 'shard wraith', ch: 'W', color: '#aff', hp: 18, atk: 10, def: 2, xp: 18, ai: 'phase', fly: true },
   prism:    { name: 'prism eye', ch: 'e', color: '#f7f', hp: 14, atk: 10, def: 2, xp: 16, ai: 'turret', range: 7, onHit: { burn: 2 } },
-  guardian: { name: 'Crystal Guardian', ch: 'Q', color: '#0ff', hp: 90, atk: 16, def: 5, xp: 100, ai: 'chase', loot: 'rare' },
+  // The Crystal Guardian (the Sanctum's throne hall): see BOSS_PATTERNS.guardian. Focus crystals feed its prism shield.
+  guardian: { name: 'Crystal Guardian', ch: 'Q', color: '#0ff', css: 'lich', hp: 160, atk: 15, def: 5, xp: 100, ai: 'boss', pattern: 'guardian', baseAi: 'chase',
+    novaCd: 3, loot: 'rare', lootPool: 'crystal' },
+  focus:    { name: 'focus crystal', ch: '♦', color: '#c0f8ff', css: 'phylactery', hp: 22, atk: 0, def: 2, xp: 10, ai: 'idle', rooted: true, alwaysAwake: true,
+    corpse: null, deathMsg: 'The focus crystal shatters into glittering dust!' },
+  // Crystal pylons (the Sanctum's galleries): rooted spires firing beams along their row and column (AI.pylon).
+  pylon:    { name: 'crystal pylon', ch: '▲', color: '#9ff', hp: 22, atk: 6, int: 8, def: 3, xp: 14, ai: 'pylon', rooted: true, pulseCd: 2, corpse: null },
   // allies
   minion:   { name: 'your skeleton', ch: 'z', color: '#a6f', def: 1, xp: 0, ai: 'ally', ally: true, kin: 'undead', minion: true, vanguard: true }, // kin: neutral with that faction; minion: counts toward the raise cap
 };
@@ -251,10 +257,10 @@ const LEVELS = [
     monsters: ['myconid', 'spider', 'moth', 'moth'], count: 10, items: 8, // sporelings only guard groves
   },
   {
-    name: 'the Crystal Sanctum', intro: 'The Crystal of Ages hums somewhere in this hall (*).',
-    gen: (w, h) => genHall(w, h), fov: 10, final: true, size: [70, 36], // boss arena
-    colors: { wall: '#7fd8ff', floor: '#23364a' },
-    monsters: ['golem', 'wraith', 'prism', 'prism'], count: 22, items: 8, boss: 'guardian',
+    name: 'the Crystal Sanctum', intro: "Galleries of living crystal hum around you. The Crystal of Ages lies in the Guardian's throne hall (*).",
+    gen: (w, h) => genSanctum(w, h), fov: 9, final: true, size: [90, 44], // crystal galleries round the Guardian's throne hall
+    colors: { wall: '#4a6a80', floor: '#23364a' },
+    monsters: ['golem', 'wraith', 'prism', 'prism'], count: 16, items: 6, boss: 'guardian',
   },
 ];
 

@@ -268,6 +268,49 @@ function riseFrom(g, m, r, stir, back, monster) {
 }
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
+  // The Crystal Guardian (the Crystal Sanctum's throne hall, guarding the Crystal of Ages): shard nova - its crystals flare
+  // (every tile within 2 marked for two turns, while it holds still), then burst: x1.5 for everyone still there; every 5
+  // turns, its foe within 2. The
+  // prism shield: at 2/3 and at 1/3 health it raises a shield (phased - blows pass through it) and two focus crystals flare
+  // up at the far sides of its hall; the shield holds until both are smashed - and while it holds it, the Guardian acts only every
+  // other turn (a race to the crystals). Otherwise it hunts you (baseAi chase).
+  guardian(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x], r = g.map.arenas?.find(a => inRect(a.r, m))?.r;
+    const focus = g.monsters.filter(o => o.alive && o.name === MONSTERS.focus.name);
+    if (m.shielded) {
+      if (focus.length) { m.status.phased = 99; if (g.turn % 2) return true; } // (holding the shield slows it: it acts every other turn)
+      else { m.shielded = false; delete m.status.phased; m.flashCss = { turn: g.turn, css: 'shieldhit' }; g.log('The last focus crystal shatters - the prism shield breaks!', m.color); }
+    }
+    const phase = m.hp <= m.maxHp / 3 ? 2 : m.hp <= m.maxHp * 2 / 3 ? 1 : 0;
+    if (phase > (m.phase || 0)) { // the prism shield goes up
+      m.phase = phase; m.shielded = true; m.status.phased = 99;
+      const spots = g.map.cells((x, y) => (r ? inRect(r, { x, y }) : dist({ x, y }, m) <= 7) && g.map.walkable(x, y) && !g.occupied(x, y) && dist({ x, y }, m) >= 4)
+        .sort((a, b) => dist(b, m) - dist(a, m));
+      const a = spots[0], b = a && spots.find(c => dist(c, a) >= 6);
+      [a, b].filter(Boolean).forEach(c => { g.spawn(MONSTERS.focus, c); Object.assign(g.monsters.at(-1), { flashCss: { turn: g.turn, css: 'emerge' } }); });
+      g.log('The Crystal Guardian raises a shimmering prism shield - two focus crystals flare to life! Smash them!', m.color);
+      return true;
+    }
+    if (m.nova && m.nova.wait-- > 0) return true; // (still gathering - a two-turn warning, room to get 3 tiles clear)
+    if (m.nova) { // the shards burst out
+      const tiles = m.nova.tiles;
+      clearDanger(g, m.nova); m.nova = null; m.novaCd = 5;
+      tiles.forEach((c, i) => { g.fx.float(c, '*', '#d0faff', { css: 'slash', delay: (dist(c, m) - 1) * 0.08 }); g.fx.flash(c, '#1a4a6a'); });
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player)) g.log(hit.length ? 'Crystal shards burst out of the Guardian!' : 'Crystal shards burst out of the Guardian and shatter on the floor.', m.color);
+      hit.forEach(e => m.attack(e, g, { mult: 1.5, verb: 'shred' }));
+      return true;
+    }
+    if (m.novaCd > 0) m.novaCd--;
+    if (t && !m.novaCd && dist(m, t) <= 2 && !isDisabled(m)) { // its crystals flare
+      const tiles = [];
+      for (let y = m.y - 2; y <= m.y + 2; y++) for (let x = m.x - 2; x <= m.x + 2; x++) if (dist({ x, y }, m) >= 1 && g.map.walkable(x, y)) tiles.push({ x, y });
+      m.nova = Object.assign(markDanger(g, m, tiles), { wait: 1 });
+      if (seen) g.log("The Guardian's crystals flare blindingly - shards are about to burst out! Get clear!", m.color);
+      return true;
+    }
+    return false;
+  },
   // The Mycelium Heart (rooted in the Fungal Depths' central cavern - it never moves; you come to it): root eruption - the
   // floor round its foe heaves (a plus of 5 tiles marked), then roots burst up: x1.3 (INT) and stuck 2 for everyone still
   // there, every 3 turns, its foe within 8 in sight. It sprouts a sporeling on the fungus round it every 7 turns (a turn's
@@ -873,6 +916,28 @@ const AI = {
     if (next) g.moveTo(m, next.x, next.y);
   },
   idle() {},
+  // Crystal pylon (the Crystal Sanctum): rooted. Every 5 turns, a foe within 9 in sight, it charges - its 4 beams (along its row
+  // and column, to the first wall, 9 tiles at most) marked a turn - then fires: x1 (INT) and burning 2 for everyone hostile on them.
+  pylon(m, g) {
+    const seen = g.map.visible[m.y]?.[m.x];
+    if (m.beam) {
+      const tiles = m.beam.tiles;
+      clearDanger(g, m.beam); m.beam = null; m.pulseCd = 5;
+      tiles.forEach(c => { g.fx.float(c, c.y === m.y ? '─' : '│', '#d0faff', { css: 'slash', delay: dist(c, m) * 0.03 }); g.fx.flash(c, '#1a4a6a'); });
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player)) g.log(hit.length ? 'The crystal pylon fires searing beams of light!' : 'The crystal pylon flashes - its beams sear empty floor.', m.color);
+      hit.forEach(e => m.attack(e, g, { magic: true, verb: 'sear', status: { burn: 2 } }));
+      return;
+    }
+    if (m.pulseCd > 0) { m.pulseCd--; return; }
+    const t = m.target;
+    if (!t || dist(m, t) > 9 || !g.map.hasLos(m, t) || isDisabled(m)) return;
+    const tiles = [];
+    for (const [dx, dy] of DIRS.slice(0, 4))
+      for (let i = 1, x = m.x + dx, y = m.y + dy; i <= 9 && g.map.walkable(x, y); i++, x += dx, y += dy) tiles.push({ x, y });
+    m.beam = markDanger(g, m, tiles);
+    if (seen) g.log('A crystal pylon hums and brightens - its beams are about to fire!', m.color);
+  },
   // Allies (raised skeletons, companions). Companions cast their class skills (aiCast) about half the time.
   // Ranged-class companions (cls.ranged: Archer, Mage) cast whenever an enemy is in view, back away from anything
   // adjacent (melee only when cornered) and hold at range instead of closing in.
