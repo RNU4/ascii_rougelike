@@ -102,6 +102,37 @@ const POOL_BASES = {
     { name: 'Silk Slippers', slot: 'feet', stats: { dodge: 6 } },
     { name: 'Broodfang', slot: 'weapon', stats: { atk: 3, crit: 5, venom: 3 } },
   ],
+  reed: [ // the Blackwater Mire: the Mire Mother, the bog witch's hut
+    { name: 'Reedweave Hood', slot: 'head', stats: { def: 1, dodge: 3 } },
+    { name: 'Leech-Leather Jerkin', slot: 'body', stats: { def: 2, hp: 6 } },
+    { name: 'Bogwalker Boots', slot: 'feet', stats: { def: 1, dodge: 3 } },
+    { name: 'Fen Spear', slot: 'weapon', stats: { atk: 3, venom: 2 } },
+    { name: "Witch's Charm", slot: 'amulet', stats: { int: 1, mp: 6 }, jewel: true },
+  ],
+  coral: [ // the Flooded Grotto: the Drowned Hag, the clams and the smugglers' cove
+    { name: 'Coral Helm', slot: 'head', stats: { def: 2, thorns: 1 } },
+    { name: 'Pearl Diadem', slot: 'head', stats: { int: 2, mp: 8 } },
+    { name: 'Kelp Wraps', slot: 'body', stats: { def: 2, dodge: 4 } },
+    { name: 'Shellguard', slot: 'offhand', stats: { def: 2, thorns: 2 } },
+    { name: 'Trident', slot: 'weapon', stats: { atk: 4, crit: 4 } },
+    { name: 'Pearl Ring', slot: 'ring', stats: { int: 1, mp: 6 }, jewel: true },
+  ],
+  fungal: [ // the Fungal Depths: the Mycelium Heart, the myconid village
+    { name: 'Capcrown', slot: 'head', stats: { hp: 6, int: 1 } },
+    { name: 'Sporehide Vest', slot: 'body', stats: { def: 2, hp: 8 } },
+    { name: 'Mycelial Wraps', slot: 'hands', stats: { def: 1, venom: 2 } },
+    { name: 'Rootstride Boots', slot: 'feet', stats: { def: 1, hp: 6 } },
+    { name: 'Glowcap Lantern', slot: 'offhand', stats: { int: 2, mp: 6 } },
+    { name: 'Puffball Mace', slot: 'weapon', stats: { atk: 4, venom: 2 } },
+  ],
+  crystal: [ // the Crystal Sanctum: the Crystal Guardian, the galleries' vaults
+    { name: 'Prism Crown', slot: 'head', stats: { def: 1, int: 2, crit: 3 } },
+    { name: 'Crystal Plate', slot: 'body', stats: { def: 5, hp: 6 } },
+    { name: 'Glass Greaves', slot: 'feet', stats: { def: 2, dodge: 3 } },
+    { name: 'Shardblade', slot: 'weapon', stats: { atk: 6, crit: 6 } },
+    { name: 'Focus Crystal', slot: 'offhand', stats: { int: 3, mp: 10 }, magic: true },
+    { name: 'Crystal Ring', slot: 'ring', stats: { int: 1, crit: 4 }, jewel: true },
+  ],
 };
 function makeGear(depth, rarity = rollRarity(depth), pool = null, baseName = null) { // baseName: that exact piece (test maps)
   const base = baseName ? [...BASES, ...Object.values(POOL_BASES).flat()].find(b => b.name === baseName)
@@ -132,6 +163,8 @@ function randomItem(depth) {
 // A piece's material, from its base name: [pattern, key, colour, body-armour fill].
 const GEAR_MATS = [
   [/bone|skull|femur|knuckle|finger/i, 'bone', '#e8dcb0', '≡'], [/silk|spider|brood/i, 'silk', '#ece8ff', '░'],
+  [/reed|leech|bogwalker|fen spear|witch/i, 'reed', '#a8b060', '▒'], [/coral|pearl|kelp|shell|trident/i, 'coral', '#ff9a86', '▒'],
+  [/capcrown|spore|mycel|rootstride|glowcap|puffball/i, 'fungal', '#d890e8', '▒'], [/crystal|prism|glass|shard/i, 'crystal', '#a0f4ff', '▓'],
   [/mithril|rune/i, 'mithril', '#8fe0ff', '▓'], [/leather|glove|sandal|buckler|cap/i, 'leather', '#b48a58', '▒'],
   [/staff|wand|orb|circlet|jade/i, 'arcane', '#c8a0ff', '░'], [/ring|amulet/i, 'gold', '#e8c060', '▓'], [/./, 'iron', '#a8b4c8', '█']];
 const gearMat = it => { const [, key, color, fill] = GEAR_MATS.find(([re]) => re.test(it.base || it.name)); return { key, color, fill }; };

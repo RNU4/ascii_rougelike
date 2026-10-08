@@ -97,7 +97,7 @@ Object.assign(Game.prototype, {
     // Tile size is a multiple of 8 (the font's native 8x8) so glyph pixels land on whole screen pixels; the map is
     // placed at whole-pixel offsets too. Both avoid thin seams between tiles.
     const box = this.$view;
-    const size = Math.max(8, Math.round((box.clientHeight - 4) / VIEW_ROWS / 8) * 8);
+    const size = this.overview ? 8 : Math.max(8, Math.round((box.clientHeight - 4) / VIEW_ROWS / 8) * 8); // overview (debug): the whole map at 8px
     this.$map.classList.add('square');
     this.$map.style.fontSize = size + 'px';
     const viewW = Math.min(map.w, Math.floor(box.clientWidth / size)), viewH = Math.min(map.h, Math.floor(box.clientHeight / size));

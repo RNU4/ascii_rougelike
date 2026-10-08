@@ -18,6 +18,12 @@ const TILES = {
   mud:       { ch: '~', color: '#8a7040', bg: '#231a0c', walk: true, slow: true, name: 'sucking mud' },
   quicksand: { ch: '~', color: '#9a8048', bg: '#2a200e', walk: true, name: 'quicksand' }, // onEnter: stuck (features.js)
   boardwalk: { ch: '=', color: '#9a7a4a', walk: true, name: 'boardwalk' },
+  rotboard:  { ch: '=', color: '#7a6a44', walk: true, name: 'rotten boardwalk' }, // may give way underfoot (onEnter)
+  hutwall:   { ch: '#', color: '#8a6a3a', bg: '#21180c', walk: false, opaque: true, name: 'plank wall' }, // the bog witch's hut
+  hutfloor:  { ch: '.', color: '#6a5232', bg: '#17110a', walk: true, name: 'plank floor' },
+  herbs:     { ch: '"', color: '#8ab05a', bg: '#17110a', walk: true, name: 'drying herbs' },
+  cauldron:  { ch: 'Ö', color: '#9fdc50', bg: '#17110a', walk: false, light: 3, lightColor: '120,220,60', css: 'swell', name: 'bubbling cauldron' }, // onBump: brews a potion, once
+  cauldroncold: { ch: 'Ö', color: '#5a5a4a', bg: '#17110a', walk: false, name: 'cold cauldron' },
   reeds:     { ch: '|', color: '#9aaa4a', walk: true, opaque: true, name: 'reeds' }, // walk through, can't see through
   moss:      { ch: ',', color: '#5a8a3a', walk: true, name: 'moss' },
   gasvent:   { ch: '°', color: '#b0d040', walk: true, burnsTo: 'mud', name: 'swamp gas vent' }, // puffs poison (swampGas)

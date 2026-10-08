@@ -443,6 +443,24 @@ function swampGas(g) {
   }
 }
 
+// Rotten boardwalk (the Mire): a third of the time the planks give way - you drop into the mud below and lose a turn.
+TILES.rotboard.onEnter = (g, x, y) => {
+  if (!chance(0.35)) return g.log('The rotten planks creak alarmingly underfoot.', '#a89060');
+  g.map.set(x, y, 'mud');
+  g.skipTurn = true;
+  g.fx.flash({ x, y }, '#3a2a10');
+  g.log('The planks give way - you crash down into the sucking mud!', '#c8a060');
+};
+// The bog witch's cauldron: stir it and it brews you one potion (healing most often), then goes cold.
+TILES.cauldron.onBump = (g, x, y) => {
+  const brew = pick(['Healing Potion', 'Healing Potion', 'Mana Potion', 'Greater Healing']);
+  g.items.push({ ...makeConsumable(CONSUMABLES.find(c => c.name === brew)), x: g.player.x, y: g.player.y });
+  g.map.set(x, y, 'cauldroncold'); g.map.computeLights();
+  g.log(`You stir the witch's cauldron - it belches green smoke and leaves behind a ${brew}.`, '#9fdc50');
+  g.lookHere();
+};
+TILES.cauldroncold.onBump = g => g.log('The cauldron has gone cold.', '#888');
+
 // Mold patch: stepping on it releases poisonous spores.
 TILES.moldpatch.onEnter = (g, x, y) => {
   g.log('Spores burst from the mold underfoot!', '#9c6');

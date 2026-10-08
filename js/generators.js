@@ -1450,7 +1450,9 @@ function genHall(w, h) {
 // Swamp overworld: firm ground and black bog in natural blobs, joined by boardwalks. Mangrove clumps,
 // reeds along the banks (block sight), mud (slow) hiding patches of quicksand, lily pads and moss.
 // Places: the sunken ruin holding the dungeon entrance (guarded), the fishermen's camp where you start (map.start),
-// a leech pool with a treasure cache on its islet, a bandit camp. Will-o'-wisps and fireflies drift about as lights.
+// a leech pool with a treasure cache on its islet, a bandit camp, the bog witch's hut (addWitchHut) and the Mire Mother's
+// pool (addMireLair). Rotten boardwalk planks (rotboard), swamp-gas vents at the water's edge. Will-o'-wisps and fireflies
+// drift about as lights; the mist rolls in and out (level.mist).
 function genSwamp(w, h) {
   const map = genCaves(w, h, { fill: 0.47 }); // CA blobs: 'wall' becomes bog, 'floor' stays firm ground
   map.cells((x, y) => map.get(x, y) === 'wall').forEach(c => map.set(c.x, c.y, 'bog'));
@@ -1467,10 +1469,18 @@ function genSwamp(w, h) {
 
   map.keepOut = [];
   addSunkenRuin(map);
+  addMireLair(map);
   addLeechPool(map);
+  addWitchHut(map);
   addBanditCamp(map);
   joinAcrossWater(map, 8, { bog: 'boardwalk', lily: 'boardwalk', tree: 'floor' }); // boardwalks across the bog
   addFishermensCamp(map);
+  // Rotten planks: some of the boardwalk (not the Mire Mother's - that one is her bait) gives way underfoot (rotboard.onEnter).
+  const inLair = p => map.keepOut.some(r => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h);
+  map.cells((x, y) => map.get(x, y) === 'boardwalk' && !inLair({ x, y })).forEach(p => chance(0.15) && map.set(p.x, p.y, 'rotboard'));
+  // Swamp-gas vents (level.gas, swampGas): on firm ground at the water's edge, away from the camp.
+  shuffle(map.cells((x, y) => map.get(x, y) === 'floor' && nextTo(x, y, 'bog') && !map.noSpawn?.[y]?.[x] && !inLair({ x, y })))
+    .slice(0, scaled(8, w, h)).forEach(p => map.set(p.x, p.y, 'gasvent'));
   // Drifting lights: wisps over the water, fireflies over land.
   shuffle(map.cells((x, y) => map.get(x, y) === 'bog')).slice(0, scaled(3, w, h)).forEach(c => map.spawns.push({ ...c, monster: 'wisp' }));
   shuffle(floors()).slice(0, scaled(4, w, h)).forEach(c => map.spawns.push({ ...c, monster: 'fireflies' }));
@@ -1558,4 +1568,44 @@ function addFishermensCamp(map) {
     map.reserved.push({ x: spot.x - 4, y: spot.y - 4, w: 9, h: 9 });
     return;
   }
+}
+
+// The bog witch's hut: a little house of rough planks on firm ground (hutwall, a door on the side facing the middle of the
+// map), herbs drying on the floor, her cauldron in the middle (bump it: TILES.cauldron.onBump brews a potion, once), the
+// witch and two frog familiars. Her stash: a magic piece of the Mire's reed gear.
+function addWitchHut(map) {
+  const r = freeRect(map, 9, 7, 4);
+  if (!r) return;
+  const inner = { x: r.x + 1, y: r.y + 1, w: r.w - 2, h: r.h - 2 }, c = roomMid(inner);
+  carveRect(map, r.x, r.y, r.w, r.h, 'hutwall');
+  carveRect(map, inner.x, inner.y, inner.w, inner.h, 'hutfloor');
+  const dx = Math.sign(map.w / 2 - c.x) || 1, door = { x: dx > 0 ? r.x + r.w - 1 : r.x, y: c.y };
+  map.set(door.x, door.y, 'door');
+  map.set(door.x + dx, door.y, 'floor'); // (a step of firm ground outside the door)
+  map.set(c.x, c.y, 'cauldron');
+  shuffle(map.cells((x, y) => map.get(x, y) === 'hutfloor' && dist({ x, y }, c) > 1)).slice(0, 4).forEach(p => map.set(p.x, p.y, 'herbs'));
+  const free = shuffle(map.cells((x, y) => map.get(x, y) === 'hutfloor' && dist({ x, y }, c) === 1));
+  map.spawns.push({ ...free[0], monster: 'bogwitch' }, { ...free[1], monster: 'frog' }, { ...free[2], monster: 'frog' });
+  map.loot.push({ ...free[3], rarity: 'magic', pool: 'reed' });
+  map.reserved.push(r);
+}
+
+// The Mire Mother's pool: a wide round pool of black bog (lily pads here and there) ringed by firm ground and reeds, and a
+// boardwalk out to an islet in the middle holding her hoard - a rare piece of reed gear. She lurks under the water (see
+// BOSS_PATTERNS.miremother); the boardwalk is the only dry way out to the islet. keepOut: no other boardwalks cross it.
+function addMireLair(map) {
+  const r = freeRect(map, 21, 13, 4);
+  if (!r) return;
+  const pool = { x: r.x + 10, y: r.y + 6, rx: 9, ry: 5 };
+  map.cells((x, y) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h).forEach(p => {
+    const e = ellipse(pool, p);
+    map.set(p.x, p.y, e < 0.08 ? 'floor' : e < 1 ? (chance(0.08) ? 'lily' : 'bog') : chance(0.35) ? 'reeds' : 'floor');
+  });
+  const side = pick([-1, 1]); // the boardwalk comes in from the west or east bank
+  for (let x = pool.x + side; Math.abs(x - pool.x) <= pool.rx; x += side) if (ellipse(pool, { x, y: pool.y }) >= 0.08) map.set(x, pool.y, 'boardwalk');
+  map.loot.push({ x: pool.x, y: pool.y, rarity: 'rare', pool: 'reed' });
+  const deep = shuffle(map.cells((x, y) => map.get(x, y) === 'bog' && ellipse(pool, { x, y }) < 0.5 && Math.abs(y - pool.y) >= 2));
+  if (deep[0]) map.spawns.unshift({ ...deep[0], monster: 'miremother' });
+  map.reserved.push(r);
+  map.keepOut.push(r);
 }

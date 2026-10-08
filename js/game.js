@@ -457,15 +457,18 @@ class Game {
   // Entities with an `aura` (Clerics) carry their own light.
   auraBearers() { return [this.player, ...this.monsters.filter(m => m.alive && m.ally)].filter(e => e.aura); }
 
+  // How far you see: the level's fov - or with `mist` ({ thick, thin, period }) the rolling mist's, thick and thin by turns.
+  sightRange() { const m = this.level.mist; return m ? (Math.floor(this.turn / m.period) % 2 ? m.thin : m.thick) : this.level.fov; }
+
   updateView() {
     this.map.addMovingLights([ // auras (Clerics) and glowing creatures (wisps, fireflies)
       ...this.auraBearers().map(e => ({ x: e.x, y: e.y, r: e.aura, color: '255,235,170' })),
       ...this.monsters.filter(m => m.alive && m.glow).map(m => ({ x: m.x, y: m.y, r: m.glow.r, color: m.glow.color }))]);
-    this.map.computeFov(this.player, this.level.fov);
+    this.map.computeFov(this.player, this.sightRange());
     if (this.sharedVision) { // option: companions' sight is added to yours (you still need your own line of sight to aim)
       const party = this.map.visible;
       for (const c of this.monsters.filter(m => m.alive && m.companion)) {
-        this.map.computeFov(c, this.level.fov);
+        this.map.computeFov(c, this.sightRange());
         this.map.visible.forEach((row, y) => row.forEach((v, x) => { if (v) party[y][x] = true; }));
       }
       this.map.visible = party;
@@ -573,6 +576,8 @@ class Game {
     if (this.level.spread) growSpread(this, this.level.spread);
     if (this.level.tide) tide(this, this.level.tide);
     if (this.level.gas) swampGas(this);
+    if (this.level.mist && this.turn % this.level.mist.period === 0)
+      this.log(this.sightRange() === this.level.mist.thick ? 'The mist rolls in thick - you can barely see past your hand.' : 'The mist thins and lifts a little.', '#9ab0a0');
     for (const e of [p, ...this.monsters]) // skill cooldowns (player and companions)
       for (const k in e.cooldowns) if (--e.cooldowns[k] <= 0) delete e.cooldowns[k];
     closeDoors(this);

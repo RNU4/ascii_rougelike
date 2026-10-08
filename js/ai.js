@@ -268,6 +268,40 @@ function riseFrom(g, m, r, stir, back, monster) {
 }
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
+  // The Mire Mother (her pool in the Blackwater Mire): a huge leech, unseen under the bog (submerge) unless right beside
+  // you. Every 5 turns, when you're within 8 and standing by open water, the bog beside you churns (the 3x3 round you
+  // marked) - next turn she lunges up out of it: x1.5 and stuck a turn for everyone still there, draining what she bites.
+  // Step back from the water's edge to make her miss. At half health a brood of 3 giant leeches swarms out of the bog
+  // around her. Otherwise she lurks and bites from the water (baseAi lurker).
+  miremother(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x];
+    const water = c => DIRS.map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy })).filter(s => TILES[g.map.get(s.x, s.y)].swim && !g.occupied(s.x, s.y) && dist(s, m) <= 8);
+    if (m.churn) { // she lunges
+      const tiles = m.churn.tiles, from = pick(water(m.churn.at));
+      clearDanger(g, m.churn); m.churn = null; m.churnCd = 5;
+      if (from) Object.assign(m, from, { flashCss: { turn: g.turn, css: 'emerge' } });
+      tiles.forEach(c => g.fx.flash(c, '#3a1a20'));
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player) || g.map.visible[m.y]?.[m.x]) g.log(hit.length ? 'The Mire Mother erupts from the bog and latches on!' : 'The Mire Mother erupts from the bog - and snaps shut on nothing.', m.color);
+      hit.forEach(e => { m.attack(e, g, { mult: 1.5, verb: 'latch onto' }); if (e.alive) applyStatus(e, 'stuck', 1, g); });
+      return true;
+    }
+    if (!m.brood && m.hp <= m.maxHp / 2) {
+      m.brood = true;
+      shuffle(g.map.cells((x, y) => TILES[g.map.get(x, y)].swim && !g.occupied(x, y) && dist({ x, y }, m) <= 4)).slice(0, 3).forEach(c => {
+        g.spawn(MONSTERS.leech, c); Object.assign(g.monsters.at(-1), { awake: true, provoked: true });
+      });
+      if (seen || dist(m, g.player) <= 6) g.log('The bog seethes - a brood of leeches swarms out around the Mire Mother!', m.color);
+    }
+    if (m.churnCd > 0) m.churnCd--;
+    if (t && !m.churnCd && dist(m, t) <= 8 && water(t).length && !isDisabled(m)) { // the water beside you churns
+      const tiles = [t, ...DIRS.map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy }))].filter(c => g.map.walkable(c.x, c.y));
+      m.churn = Object.assign(markDanger(g, m, tiles), { at: { x: t.x, y: t.y } });
+      if (t === g.player) g.log('The black water beside you churns and heaves...', '#d07080');
+      return true;
+    }
+    return false;
+  },
   // The Banshee (her chapel): the keen - she draws breath for a turn while the air trembles round her (marked), then
   // screams: everyone hostile on those tiles is hurt (x1.5) and silenced 2 turns. Her keens alternate: a close one (1-2
   // tiles - back away) and a far-reaching one (2-4 tiles - get in close, or right out); every 3 turns, 2 once she's
