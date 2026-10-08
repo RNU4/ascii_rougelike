@@ -5,6 +5,9 @@
 // anywhere on the mass otherwise); shedding parts when it has more than its HP allows (tail first for a chain, else the
 // farthest from the core), each leaving its remains.
 const bodyParts = m => (m.body ||= []).filter(s => s.alive);
+// Where a multi-tile creature's head and body can go: open ground - or, for an `aquatic` one (the Mire Mother), water only.
+const roams = (g, m, x, y) => (m.aquatic ? !!TILES[g.map.get(x, y)]?.swim : g.map.walkable(x, y));
+const roamStep = (g, m, a, b) => g.map.canStep(a.x, a.y, b.x, b.y, (x, y) => g.map.passable(x, y) || roams(g, m, x, y));
 const bodySize = m => Math.max(0, Math.ceil(m.size * m.hp / m.maxHp) - 1);
 // Rigid form (spiders): every leg has a home slot in BODY_LAYOUTS[m.layout] (an offset from the core). A leg's glyph
 // comes from where it is relative to the part it joins (the body, or an outer leg's inner leg): \ / │, or - when level
@@ -105,7 +108,7 @@ function bodyFrontier(g, m) {
     return null;
   }
   const from = chain ? [parts.at(-1) || m] : [m, ...parts];
-  const cells = from.flatMap(p => DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy }))).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y));
+  const cells = from.flatMap(p => DIRS.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy }))).filter(c => roams(g, m, c.x, c.y) && !g.occupied(c.x, c.y));
   // a chain grows away from its prey (or its head), so its body trails behind instead of blocking the head's way
   const away = m.target || m;
   return chain ? cells.sort((a, b) => dist(b, away) - dist(a, away))[0] : cells[0];
@@ -405,18 +408,25 @@ const BOSS_PATTERNS = {
     }
     return false;
   },
-  // The Mire Mother (her pool in the Blackwater Mire): a huge leech, unseen under the bog (submerge) unless right beside
-  // you. Every 5 turns, when you're within 8 and standing by open water, the bog beside you churns (the 3x3 round you
-  // marked) - next turn she lunges up out of it: x1.5 and stuck a turn for everyone still there, draining what she bites.
+  // The Mire Mother (her pool in the Blackwater Mire): a huge leech - an aquatic chain multibody, her body trailing through
+  // the bog behind her head (water only: `aquatic`, see roams). Every 5 turns, when you're within 8 and within 2 of open water, the bog beside you churns (the 3x3 round you
+  // marked) - next turn she dives and lunges up out of it (her body sinks away and uncoils again round the new spot): x1.5
+  // and stuck a turn for everyone still there, draining what she bites.
   // Step back from the water's edge to make her miss. At half health a brood of 3 giant leeches swarms out of the bog
-  // around her. Otherwise she lurks and bites from the water (baseAi lurker).
+  // around her. Otherwise she swims after you through the bog and bites from the water's edge (baseAi multibody).
   miremother(m, g) {
     const t = m.target, seen = g.map.visible[m.y]?.[m.x];
-    const water = c => DIRS.map(([dx, dy]) => ({ x: c.x + dx, y: c.y + dy })).filter(s => TILES[g.map.get(s.x, s.y)].swim && !g.occupied(s.x, s.y) && dist(s, m) <= 8);
+    const water = c => g.map.cells((x, y) => dist({ x, y }, c) <= 2 && TILES[g.map.get(x, y)].swim && !g.occupied(x, y) && dist({ x, y }, m) <= 8)
+      .sort((a, b) => dist(a, c) - dist(b, c)); // (open water within 2 of you - the nearest first: no safe middle of an islet)
     if (m.churn) { // she lunges
-      const tiles = m.churn.tiles, from = pick(water(m.churn.at));
+      const tiles = m.churn.tiles, from = water(m.churn.at)[0];
       clearDanger(g, m.churn); m.churn = null; m.churnCd = 5;
-      if (from) Object.assign(m, from, { flashCss: { turn: g.turn, css: 'emerge' } });
+      if (from) { // her body slides under, and she bursts up beside you, the rest of her uncoiling out of the water after her
+        bodyParts(m).forEach((q, i) => { g.fx.float(q, q.ch, q.color, { css: 'sink', delay: i * 0.08 }); q.hp = 0; });
+        m.body = [];
+        Object.assign(m, from, { flashCss: { turn: g.turn, css: 'rise' } });
+        assembleBody(m, g).forEach((q, i) => (q.flashCss = { turn: g.turn, css: 'rise rd' + Math.min(i + 1, 6) }));
+      }
       tiles.forEach(c => g.fx.flash(c, '#3a1a20'));
       const hit = foesOn(g, m, tiles);
       if (seen || hit.includes(g.player) || g.map.visible[m.y]?.[m.x]) g.log(hit.length ? 'The Mire Mother erupts from the bog and latches on!' : 'The Mire Mother erupts from the bog - and snaps shut on nothing.', m.color);
@@ -842,9 +852,9 @@ const AI = {
       return;
     }
     if (t && !bites()) { // the core / head: one step closer along real paths
-      const dt = g.map.distanceFrom(t.x, t.y, (x, y) => g.map.passable(x, y)), own = (x, y) => !chain && body.find(q => q.x === x && q.y === y);
+      const dt = g.map.distanceFrom(t.x, t.y, (x, y) => g.map.passable(x, y) || roams(g, m, x, y)), own = (x, y) => !chain && body.find(q => q.x === x && q.y === y);
       const open = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy }))
-        .filter(c => g.map.walkable(c.x, c.y) && (!g.occupied(c.x, c.y) || own(c.x, c.y)) && g.map.canStep(m.x, m.y, c.x, c.y));
+        .filter(c => roams(g, m, c.x, c.y) && (!g.occupied(c.x, c.y) || own(c.x, c.y)) && roamStep(g, m, m, c));
       const byPath = (a, b) => dt[a.y][a.x] - dt[b.y][b.x] || touching(a) - touching(b);
       const c = open.filter(c => dt[c.y][c.x] < dt[m.y][m.x]).sort(byPath)[0]
         || (chain && open.filter(c => dt[c.y][c.x] <= dt[m.y][m.x] + 1).sort(byPath)[0]); // (a blocked head sidesteps)
@@ -853,7 +863,7 @@ const AI = {
       else if (chain && !open.length) return reverseChain(m); // boxed in by walls and its own body: turn round
     } else if (!t && chain && chance(0.5)) { // nothing to hunt: a snake slithers about, mostly keeping its heading
       const open = DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy, dx, dy }))
-        .filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(m.x, m.y, c.x, c.y));
+        .filter(c => roams(g, m, c.x, c.y) && !g.occupied(c.x, c.y) && roamStep(g, m, m, c));
       const h = m.heading || {}, turn = c => Math.abs(c.dx - h.dx) + Math.abs(c.dy - h.dy) || 0;
       const wiggle = chance(0.25); // now and then it turns off its heading
       const c = shuffle(open).sort((a, b) => touching(a) - touching(b) || (wiggle ? 0 : turn(a) - turn(b)))[0];
@@ -862,7 +872,7 @@ const AI = {
     }
     const step = (q, aim, ok) => { // one tile toward aim (or stay), among tiles passing ok()
       const cands = [{ x: q.x, y: q.y }, ...DIRS.map(([dx, dy]) => ({ x: q.x + dx, y: q.y + dy }))
-        .filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y) && g.map.canStep(q.x, q.y, c.x, c.y))];
+        .filter(c => roams(g, m, c.x, c.y) && !g.occupied(c.x, c.y) && roamStep(g, m, q, c))];
       Object.assign(q, cands.sort((a, b) => ok(a) - ok(b) || dist(a, aim) - dist(b, aim))[0]);
     };
     if (rigid) placeLegs(m, g, want); // the legs walk, and carry the body (the gait)

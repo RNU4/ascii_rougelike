@@ -56,8 +56,10 @@ const MONSTERS = {
   swamprat: { name: 'swamp rat', ch: 'r', color: '#9a8a58', hp: 4, atk: 2, def: 0, xp: 2, ai: 'chase' },
   viper:    { name: 'marsh viper', ch: 's', color: '#7c4', hp: 6, atk: 3, def: 0, xp: 4, ai: 'chase', onHit: { poison: 3 }, corpse: null },
   // The Mire Mother (the Blackwater Mire's boss, in her pool - addMireLair): a monstrous leech under the bog. See BOSS_PATTERNS.miremother.
-  miremother: { name: 'Mire Mother', ch: 'Θ', color: '#d07080', hp: 55, atk: 6, def: 1, xp: 50, ai: 'boss', pattern: 'miremother', baseAi: 'lurker',
-    swim: true, submerge: true, drain: true, churnCd: 2, alwaysAwake: true, guard: true, loot: 'rare', lootPool: 'reed', corpse: null },
+  miremother: { name: 'Mire Mother', ch: 'Θ', color: '#ff7a90', hp: 55, atk: 6, def: 1, xp: 50, ai: 'boss', pattern: 'miremother', baseAi: 'multibody',
+    size: 7, part: 'mirepart', form: 'chain', aquatic: true, swim: true, drain: true, churnCd: 2, alwaysAwake: true, guard: true,
+    shedMsg: 'A length of the Mire Mother goes limp and sinks!', loot: 'rare', lootPool: 'reed', corpse: null },
+  mirepart: { name: 'Mire Mother', ch: 'o', color: '#b05868', hp: 1, atk: 0, def: 1, xp: 0, ai: 'segment', swim: true, corpse: null },
   // The bog witch (her hut, addWitchHut): curses from the doorway and keeps her distance.
   bogwitch: { name: 'bog witch', ch: 'w', color: '#b0d070', hp: 16, atk: 3, int: 3, def: 1, xp: 16, ai: 'caster', kite: true, skills: ['curse', 'drain'], loot: 'magic', lootPool: 'reed' },
   boglurker: { name: 'bog lurker', ch: 'B', color: '#8a7a4a', hp: 18, atk: 5, def: 1, xp: 12, ai: 'lurker', swim: true, submerge: true, loot: 'magic' },
