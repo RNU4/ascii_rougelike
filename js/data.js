@@ -164,8 +164,13 @@ const MONSTERS = {
   warden:   { name: 'Grave Warden', ch: 'Z', color: '#e8d8a0', hp: 30, atk: 8, def: 3, xp: 25, ai: 'chase', faction: 'undead' },
   hand:     { name: 'crawling hand', ch: 'ƒ', color: '#c8b8a0', hp: 4, atk: 3, def: 0, xp: 3, ai: 'fast', faction: 'undead', corpse: null }, // come in packs
   // 4: fungal depths
-  spore:    { name: 'sporeling', ch: 'o', color: '#e8f', hp: 8, atk: 8, def: 0, xp: 9, ai: 'turret', range: 5, onHit: { poison: 3 } },
-  myconid:  { name: 'myconid', ch: 'M', color: '#c6a', hp: 24, atk: 9, def: 3, xp: 14, ai: 'chase' },
+  // The Mycelium Heart (the Fungal Depths' boss, rooted in the central cavern): see BOSS_PATTERNS.myceliumheart.
+  myceliumheart: { name: 'Mycelium Heart', spores: true, ch: '¥', color: '#e070ff', css: 'writhe', hp: 120, atk: 10, int: 9, def: 3, xp: 80, ai: 'boss', pattern: 'myceliumheart', baseAi: 'idle',
+    rooted: true, alwaysAwake: true, graspCd: 2, sproutCd: 4, loot: 'rare', lootPool: 'fungal', corpse: null, deathMsg: 'The Mycelium Heart bursts in a cloud of dead spores - the roots go limp all through the cavern.' },
+  // The myconid village's elder: heals his kin from the middle of the clearing.
+  myconidelder: { name: 'myconid elder', spores: true, ch: 'M', color: '#f0a0ff', hp: 30, atk: 7, int: 4, def: 3, xp: 22, ai: 'caster', skills: ['heal'], loot: 'magic', lootPool: 'fungal' },
+  spore:    { name: 'sporeling', spores: true, ch: 'o', color: '#e8f', hp: 8, atk: 8, def: 0, xp: 9, ai: 'turret', range: 5, onHit: { poison: 3 } },
+  myconid:  { name: 'myconid', spores: true, ch: 'M', color: '#c6a', hp: 24, atk: 9, def: 3, xp: 14, ai: 'chase' },
   spider:   { name: 'cave spider', webs: true, ch: 's', color: '#a33', hp: 12, atk: 7, def: 1, xp: 13, ai: 'fast', onHit: { poison: 4 } },
   cryptspider: { name: 'crypt spider', webs: true, ch: 's', color: '#c9a0c0', hp: 8, atk: 5, def: 0, xp: 8, ai: 'fast', onHit: { poison: 3 } }, // ossuary lairs
   webspinner: { name: 'web spinner', webs: true, ch: 'S', color: '#dcdcff', hp: 10, atk: 3, def: 0, xp: 12, ai: 'webber', range: 5,

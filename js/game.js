@@ -570,7 +570,7 @@ class Game {
     }
     tickBurrowed(this); // burrowed bone worms resurface
     arenaTick(this); // boss rooms lock while their bosses live
-    tickFire(this); tickEggs(this); tickBones(this); tickNiches(this); tickHandRoom(this); // (Silk Hive) burning silk spreads; egg sacs hatch
+    tickFire(this); tickEggs(this); tickSpores(this); tickBones(this); tickNiches(this); tickHandRoom(this); // (Silk Hive) burning silk spreads; egg sacs hatch
     tickTimed(this); // skill-made tiles expire; consecrated ground heals / burns
     trialTick(this); // crypt trial chamber: seal, waves, reward
     if (this.level.spread) growSpread(this, this.level.spread);

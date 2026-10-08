@@ -1028,7 +1028,8 @@ function growRoot(map, p, len) {
 }
 
 // Gives fungal grottos their roles: glowing groves guarded by sporeling clusters, a spider nest,
-// a flooded root pool and a fungal shrine. Fungus carpets the caves; the centre gets a few dim groves too.
+// a flooded root pool, a fungal shrine and the myconid village. Fungus carpets the caves; the centre gets a few dim groves
+// too, and the Mycelium Heart in its middle. Puffballs (spore mines) dot the fungus.
 function furnishFungal(map) {
   const reach = map.distanceFrom(map.center.x, map.center.y);
   map.caverns.forEach(c => (c.cells = c.cells.filter(p => reach[p.y][p.x] < Infinity && map.walkable(p.x, p.y))));
@@ -1037,7 +1038,7 @@ function furnishFungal(map) {
   // Fungus grows in a few distinct patches (more in the big central cavern), leaving clear floor between them.
   map.caverns.forEach(c => { for (let i = c === map.center ? 6 : rand(1, 2); i > 0; i--) { const s = pick(floorOf(c)); if (s) blob(map, s.x, s.y, c === map.center ? 12 : 6, 'fungus', ['floor']); } });
   const grove = (c, shrooms) => shuffle(floorOf(c)).slice(0, shrooms).forEach(p => map.set(p.x, p.y, 'glowshroom'));
-  const [g1, g2, g3, nest, pool, shrine] = shuffle(map.grottos);
+  const [g1, g2, g3, nest, pool, shrine, village] = shuffle(map.grottos);
 
   // Glowing groves: purple light, three sporelings guarding each.
   for (const c of [g1, g2, g3]) { grove(c, 4); around(c, 3, 'spore'); }
@@ -1056,7 +1057,26 @@ function furnishFungal(map) {
   map.set(shrine.x, shrine.y, 'altar');
   DIRS.filter(([dx, dy]) => dx && dy).forEach(([dx, dy]) => map.walkable(shrine.x + 2 * dx, shrine.y + 2 * dy) && map.set(shrine.x + 2 * dx, shrine.y + 2 * dy, 'glowshroom'));
   around(shrine, 2, 'myconid');
-  for (const c of [g1, g2, g3, nest, pool, shrine]) map.reserved.push(cavernBox(c));
+  // Myconid village: giant mushroom caps (bigcap - they block the way, like huts) round a clearing of fungus, the elder in
+  // the middle healing his kin, myconids about, a stash of fungal gear.
+  if (village) {
+    floorOf(village).forEach(p => map.set(p.x, p.y, 'fungus'));
+    shuffle(village.cells.filter(p => dist(p, village) >= 2 && DIRS.slice(0, 4).some(([dx, dy]) => map.get(p.x + dx, p.y + dy) === 'wall')))
+      .slice(0, 5).forEach(p => map.set(p.x, p.y, 'bigcap'));
+    map.spawns.push({ x: village.x, y: village.y, monster: 'myconidelder' });
+    around(village, 3, 'myconid');
+    const s = pick(village.cells.filter(p => map.get(p.x, p.y) === 'fungus' && dist(p, village) === 1));
+    if (s) map.loot.push({ ...s, rarity: 'magic', pool: 'fungal' });
+  }
+  // The Mycelium Heart: rooted in the middle of the great central cavern, a ring of roots round it (BOSS_PATTERNS.myceliumheart).
+  const open = p => [[0, 0], ...DIRS].every(([dx, dy]) => map.walkable(p.x + dx, p.y + dy)); // (the cavern's middle may be in a rock outcrop)
+  const heart = map.center.cells.filter(open).sort((a, b) => dist(a, map.center) - dist(b, map.center))[0] || map.center;
+  for (let i = 0; i < 6; i++) growRoot(map, { x: heart.x + rand(-2, 2), y: heart.y + rand(-2, 2) }, rand(4, 8));
+  map.set(heart.x, heart.y, 'floor');
+  map.spawns.unshift({ x: heart.x, y: heart.y, monster: 'myceliumheart' });
+  // Puffballs: spore mines on the fungus (puffball onEnter / onMonster: a lingering spore cloud, map.spores - tickSpores).
+  shuffle(map.cells((x, y) => map.get(x, y) === 'fungus' && dist({ x, y }, heart) > 3)).slice(0, scaled(14, map.w, map.h)).forEach(p => map.set(p.x, p.y, 'puffball'));
+  for (const c of [g1, g2, g3, nest, pool, shrine, village].filter(Boolean)) map.reserved.push(cavernBox(c));
   return map;
 }
 

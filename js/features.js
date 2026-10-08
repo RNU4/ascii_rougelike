@@ -486,6 +486,26 @@ TILES.strongbox.onBump = (g, x, y) => {
 };
 TILES.strongboxopen.onBump = g => g.log('The strongbox is empty.', '#888');
 
+// Puffballs (the Fungal Depths): whoever steps on one - you or a monster (not the fungus folk, `spores`) - bursts it into a
+// spore cloud over the 3x3 round it for 4 turns (map.spores, tickSpores): poison for anyone standing in it.
+function burstPuffball(g, x, y) {
+  g.map.set(x, y, 'fungus');
+  sporeCloud(g, { x, y }, 1, 4);
+  if (g.map.visible[y][x]) g.log('A puffball bursts in a choking cloud of spores!', '#e8d0a0');
+}
+const sporeCloud = (g, c, r, ttl) => { (g.map.spores ||= []).push({ x: c.x, y: c.y, r, ttl }); g.fx.puff(c, r, '200,150,220'); };
+TILES.puffball.onEnter = (g, x, y) => burstPuffball(g, x, y);
+TILES.puffball.onMonster = (g, m, x, y) => { if (!m.spores && !m.fly) burstPuffball(g, x, y); };
+function tickSpores(g) {
+  const clouds = g.map.spores;
+  if (!clouds?.length) return;
+  for (const c of clouds) {
+    if (g.map.visible[c.y]?.[c.x]) g.fx.puff(c, c.r, '200,150,220');
+    for (const e of [g.player, ...g.monsters]) if (e.alive && !e.spores && !e.partOf && dist(e, c) <= c.r) applyStatus(e, 'poison', 2, g, e !== g.player);
+  }
+  g.map.spores = clouds.filter(c => --c.ttl > 0);
+}
+
 // Mold patch: stepping on it releases poisonous spores.
 TILES.moldpatch.onEnter = (g, x, y) => {
   g.log('Spores burst from the mold underfoot!', '#9c6');

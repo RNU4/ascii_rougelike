@@ -112,6 +112,9 @@ const TILES = {
   altarUsed: { ch: '+', color: '#666', walk: false },
   brazier: { ch: '*', color: '#ffb040', walk: false, light: 4, fire: true },
   campfire: { ch: '*', color: '#ff6a20', walk: false, light: 5, fire: true, name: 'campfire' },
+  puffball:   { ch: 'o', color: '#e8d0a0', bg: '#2a1a2e', walk: true, name: 'puffball' }, // bursts into a spore cloud when stepped on (features.js)
+  bigcap:     { ch: '♠', color: '#d070e0', bg: '#1e1224', walk: false, opaque: true, name: 'giant mushroom cap' }, // the myconid village's huts
+  sprouting:  { ch: '♣', color: '#f0a0ff', bg: '#2a1a2e', walk: false, css: 'swell', name: 'sprouting fungus' }, // (a sporeling next turn)
   glowshroom: { ch: '*', color: '#c080ff', walk: false, light: 3, lightColor: '170,90,255', name: 'glowing mushroom' },
   gong:     { ch: 'O', color: '#ffcc33', bg: '#3a2a00', walk: false, name: 'alarm gong' },
   gongRung: { ch: 'O', color: '#8a7030', walk: false, name: 'rung gong' },

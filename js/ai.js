@@ -268,6 +268,58 @@ function riseFrom(g, m, r, stir, back, monster) {
 }
 // Each returns true if it used the boss's turn.
 const BOSS_PATTERNS = {
+  // The Mycelium Heart (rooted in the Fungal Depths' central cavern - it never moves; you come to it): root eruption - the
+  // floor round its foe heaves (a plus of 5 tiles marked), then roots burst up: x1.3 (INT) and stuck 2 for everyone still
+  // there, every 3 turns, its foe within 8 in sight. It sprouts a sporeling on the fungus round it every 7 turns (a turn's
+  // warning; 2 at most). At half health the spore bloom: everything within 4 is marked, then bursts into spore clouds
+  // (poison, 5 turns). Beside it, it lashes out (melee).
+  myceliumheart(m, g) {
+    const t = m.target, seen = g.map.visible[m.y]?.[m.x];
+    riseFrom(g, m, null, 'sprouting', 'fungus', 'spore');
+    if (m.bloom) { // the spore bloom bursts
+      const tiles = m.bloom.tiles;
+      clearDanger(g, m.bloom); m.bloom = null;
+      shuffle(tiles).slice(0, 8).forEach(c => sporeCloud(g, c, 1, 5));
+      const hit = foesOn(g, m, tiles);
+      g.log('The Mycelium Heart bursts open in a vast bloom of choking spores!', m.color);
+      hit.forEach(e => { m.attack(e, g, { magic: true, verb: 'choke' }); if (e.alive) applyStatus(e, 'poison', 4, g); });
+      return true;
+    }
+    if (m.grasp) { // the roots burst up
+      const tiles = m.grasp.tiles;
+      clearDanger(g, m.grasp); m.grasp = null; m.graspCd = 3;
+      tiles.forEach((c, i) => { g.fx.float(c, '&', '#c08a50', { css: 'slash', delay: i * 0.05 }); g.fx.flash(c, '#2a1a10'); });
+      const hit = foesOn(g, m, tiles);
+      if (seen || hit.includes(g.player)) g.log(hit.length ? 'Roots erupt from the ground and lash around you!' : 'Roots erupt from the ground, grasping at nothing.', '#c08a50');
+      hit.forEach(e => { m.attack(e, g, { mult: 1.3, magic: true, verb: 'lash' }); if (e.alive) applyStatus(e, 'stuck', 2, g); });
+      return true;
+    }
+    if (!m.bloomed && m.hp <= m.maxHp / 2) { // the bloom swells
+      m.bloomed = true;
+      const tiles = [];
+      for (let y = m.y - 4; y <= m.y + 4; y++) for (let x = m.x - 4; x <= m.x + 4; x++)
+        if (dist({ x, y }, m) >= 1 && g.map.walkable(x, y) && g.map.hasLos(m, { x, y })) tiles.push({ x, y });
+      m.bloom = markDanger(g, m, tiles);
+      g.log('The Mycelium Heart swells and pulses - a bloom of spores is about to burst! Get clear!', m.color);
+      return true;
+    }
+    if (m.sproutCd > 0) m.sproutCd--;
+    const sprouts = g.monsters.filter(o => o.alive && o.raisedBy === m).length + tilesNear(g, m, null, 'sprouting').length;
+    if (t && !m.sproutCd && sprouts < 2) { // a sporeling sprouts (free: it doesn't take the turn)
+      const c = pick(g.map.cells((x, y) => g.map.get(x, y) === 'fungus' && !g.occupied(x, y) && dist({ x, y }, m) >= 2 && dist({ x, y }, m) <= 5));
+      if (c) { g.map.set(c.x, c.y, 'sprouting'); if (g.map.visible[c.y][c.x]) g.log('The fungus nearby bulges and splits - something is sprouting!', '#f0a0ff'); }
+      m.sproutCd = 7;
+    }
+    if (m.graspCd > 0) m.graspCd--;
+    if (t && !m.graspCd && dist(m, t) <= 8 && g.map.hasLos(m, t) && !isDisabled(m)) { // the floor heaves
+      const tiles = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy })).filter(c => g.map.walkable(c.x, c.y));
+      m.grasp = markDanger(g, m, tiles);
+      if (seen || t === g.player) g.log(`The ground heaves around ${t.obj} - roots are coming up!`, '#c08a50');
+      return true;
+    }
+    if (t && dist(m, t) === 1 && !isDisabled(m)) { m.attack(t, g, { verb: 'lash' }); return true; }
+    return false;
+  },
   // The Drowned Hag (her island in the Flooded Grotto): the tidal surge - the water draws back for a turn while a 3-wide lane
   // 7 tiles long from her toward her foe is marked, then the wave crashes down it: x1.2 (INT), swept 2 tiles back and a
   // lost turn for everyone still in it. Every 6 turns, 4 at high tide. At half health "the sea answers": she drags the

@@ -28,7 +28,7 @@ function simBoss(cls, bossName, lvl, { items = true, pieces, trace = null, floor
   const ranged = cls.ranged || cls.support;
   const danger = () => new Set((g.map.dangers || []).filter(d => d.owner.alive).flatMap(d => d.tiles.map(c => c.x + ',' + c.y)));
   for (let it = 0; it < 1500 && g.state === 'play' && !(boss.hp <= 0 && !boss.underground) && g.turn < 600; it++) {
-    const foes = g.monsters.filter(m => m.alive && !m.ally && g.hostile(p, m) && inside(m) && g.seesMonster(m) && !m.rooted)
+    const foes = g.monsters.filter(m => m.alive && !m.ally && g.hostile(p, m) && inside(m) && g.seesMonster(m) && (!m.rooted || m === boss))
       .sort((a, b) => dist(a, p) - dist(b, p));
     const ph = g.monsters.find(m => m.alive && m.name === 'phylactery');
     const foe = foes[0] || (ph && inside(ph) ? ph : null);
