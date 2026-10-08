@@ -270,15 +270,15 @@ function riseFrom(g, m, r, stir, back, monster) {
 const BOSS_PATTERNS = {
   // The Banshee (her chapel): the keen - she draws breath for a turn while the air trembles round her (marked), then
   // screams: everyone hostile on those tiles is hurt (x1.5) and silenced 2 turns. Her keens alternate: a close one (1-2
-  // tiles - back away) and a far-reaching one (3-4 tiles - get in close, or right out); every 4 turns, 3 once she's
+  // tiles - back away) and a far-reaching one (2-4 tiles - get in close, or right out); every 3 turns, 2 once she's
   // hurt to half. Pinned in melee she flits away (every 5 turns: dissolves and drifts back in 4-6 tiles off, among the
-  // pews). At half health "the dead answer": two ghosts rise beside her. Otherwise she fights you as baseAi chase.
+  // pews). At half health "the dead answer": three ghosts rise beside her. Otherwise she fights you as baseAi chase.
   banshee(m, g) {
     const t = m.target, seen = g.map.visible[m.y]?.[m.x], r = g.map.arenas?.find(a => inRect(a.r, m))?.r;
     const inArea = c => (r ? inRect(r, c) : dist(c, m) <= 6);
     if (m.keen) { // the scream lands
       const tiles = m.keen.tiles;
-      clearDanger(g, m.keen); m.keen = null; m.keenCd = m.answered ? 3 : 4;
+      clearDanger(g, m.keen); m.keen = null; m.keenCd = m.answered ? 2 : 3;
       tiles.forEach(c => g.fx.flash(c, '#3a4466'));
       const hit = foesOn(g, m, tiles);
       if (seen || hit.includes(g.player)) g.log(hit.length ? 'The Banshee shrieks - the sound tears through you!' : 'The Banshee shrieks at no one.', '#dde4ff');
@@ -287,7 +287,7 @@ const BOSS_PATTERNS = {
     }
     if (!m.answered && m.hp <= m.maxHp / 2) {
       m.answered = true;
-      const spots = shuffle(DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y))).slice(0, 2);
+      const spots = shuffle(DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y))).slice(0, 3);
       spots.forEach(c => { g.spawn(MONSTERS.ghost, c); Object.assign(g.monsters.at(-1), { awake: true, provoked: true, flashCss: { turn: g.turn, css: 'emerge' } }); });
       if (seen) g.log('The Banshee wails for the dead - and the dead answer!', '#bdf');
       return true;
@@ -297,7 +297,7 @@ const BOSS_PATTERNS = {
     if (m.flitCd > 0) m.flitCd--;
     if (!m.keenCd && dist(m, t) <= 4 && !isDisabled(m)) { // draws breath
       m.near = !m.near;
-      const [lo, hi] = m.near ? [1, 2] : [3, 4], tiles = [];
+      const [lo, hi] = m.near ? [1, 2] : [2, 4], tiles = []; // (the far keen takes in 2 too: no hugging the line between them)
       for (let y = m.y - hi; y <= m.y + hi; y++) for (let x = m.x - hi; x <= m.x + hi; x++)
         if (dist({ x, y }, m) >= lo && g.map.walkable(x, y) && g.map.hasLos(m, { x, y })) tiles.push({ x, y });
       m.keen = markDanger(g, m, tiles);

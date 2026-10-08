@@ -356,7 +356,7 @@ Object.assign(Game.prototype, {
     const lying = this.itemsAt(p.x, p.y); // what's under you
     const here = lying.length ? ['', '<b>HERE</b>  (G: pick up)', ...lying.map(i => ` ${itemName(i)}`)] : [];
     this.$side.innerHTML = [
-      `<b style="color:${p.color}">${p.cls.title}</b>  Lv ${p.lvl}  (XP ${p.xp}/${p.lvl * 20})`,
+      `<b style="color:${p.color}">${p.cls.title}</b>  Lv ${p.lvl}  (XP ${p.xp}/${xpToNext(p.lvl)})`,
       `${this.depth ? 'Dungeon ' + this.depth + ': ' : ''}${this.level.name}`,
       this.compass(),
       this.tideGauge(),

@@ -11,8 +11,8 @@ const SIM_WAVE = 3, SIM_MAX_KILLS = 120, SIM_MAX_TURNS = 3000;
 
 // items mode: a gear set like one picked up by this depth - per slot, a random item from the dungeon's loot roll for the
 // depth that this class can wear (casters-only gear goes to casters) - plus healing potions the bot drinks below 35% HP.
-function simGear(g, p, depth) {
-  for (const slot of SLOTS)
+function simGear(g, p, depth, pieces = SLOTS.length) { // pieces: how many slots get something (random ones)
+  for (const slot of shuffle([...SLOTS]).slice(0, pieces))
     for (let i = 0; i < 60; i++) { const it = makeGear(depth); if (it.slot === slot && canWear(p, it)) { p.gear[slot] = it; break; } }
   p.recalc(); p.hp = p.maxHp; p.mp = p.maxMp;
   g.addItem({ ...makeConsumable(CONSUMABLES[0]), count: 2 });
@@ -26,7 +26,7 @@ function simTrial(cls, depth, { boss = false, trace = null, items = false } = {}
   g.state = 'play'; g.depth = depth; g.turn = 0; g.messages = []; g.floors = {}; g.allyStance = 'aggressive'; g.alliesHold = false;
   g.orb = g.coil = g.targeting = g.menu = null; g.items = []; g.monsters = []; g.sprouts = 0;
   const p = g.player = new Player(cls, 0, 0);
-  while (p.lvl < SIM_LEVELS[depth]) p.gainXp(p.lvl * 20 - p.xp, g);
+  while (p.lvl < SIM_LEVELS[depth]) p.gainXp(xpToNext(p.lvl) - p.xp, g);
   p.skills.push(...poolPicks(p, depth + 1)); // roughly a tome per floor so far
   p.skills = p.skills.slice(0, ACTIVE_SKILLS);
   p.gainXp = () => {}; // no level-ups mid-fight

@@ -159,7 +159,7 @@ const SKILLS = {
     } },
 
   // Mage
-  firebolt: { magic: true, name: 'Firebolt', mp: 3, range: 8, ground: true, desc: 'Armor-piercing bolt (x2.5) that sets the target burning. Burns mold and webs.',
+  firebolt: { magic: true, name: 'Firebolt', mp: 3, cd: 2, range: 8, ground: true, desc: 'Armor-piercing bolt (x2.5) that sets the target burning. Burns mold and webs.',
     use: (g, p, t) => {
       scorch(g, line(p.x, p.y, t.x, t.y));
       if (t.hp) bolt(g, p, t, '*', '#f80', { mult: 2.5, pierce: true, verb: 'scorch', status: { burn: 3 } });
@@ -321,8 +321,8 @@ const SKILLS = {
       castLog(g, p, `Holy light mends ${partyOf(g, p)} for ${n}.`, '#ffd');
       return true;
     } },
-  smite: { magic: true, name: 'Smite', mp: 3, lvl: 2, range: 6, desc: 'An armor-piercing holy bolt (x1.8); double damage to undead.',
-    use: (g, p, t) => (bolt(g, p, t, '+', '#ffd', { mult: t.faction === 'undead' ? 3.6 : 1.8, pierce: true, verb: 'smite' }), true) },
+  smite: { magic: true, name: 'Smite', mp: 3, cd: 2, lvl: 2, range: 6, desc: 'An armor-piercing holy bolt (x1.8); x1.5 against undead.',
+    use: (g, p, t) => (bolt(g, p, t, '+', '#ffd', { mult: t.faction === 'undead' ? 2.7 : 1.8, pierce: true, verb: 'smite' }), true) },
   bless: { name: 'Bless', mp: 5, cd: 10, lvl: 2, desc: 'Shield yourself and allies within 5 (+4 DEF) for 8 turns.',
     use: (g, p) => (friendsNear(g, p, 5).forEach(f => applyStatus(f, 'shield', 8, g)), true) },
   turnundead: { magic: true, name: 'Turn Undead', mp: 6, cd: 8, lvl: 3, desc: 'Undead within 6 are seared by holy light and flee for 6 turns.',

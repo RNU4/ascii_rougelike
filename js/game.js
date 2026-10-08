@@ -158,7 +158,7 @@ class Game {
     if (e !== this.player && (here.slow && !e.swim || here.snag && !e.ally) && this.turn % 2) return false; // caltrops: enemies
     if (e !== this.player && TILES[this.map.get(x, y)].door) { openDoor(this, x, y); return true; } // monsters open doors
     if (e.rooted || e !== this.player && Object.keys(e.status).some(k => STATUS[k].hold)) return false; // rooted (bone forge); webbed / stuck (you: Game.move)
-    if (!this.canEnter(e, x, y) || this.occupied(x, y) || e.shunLight && this.map.isLit(x, y)) return false;
+    if (!this.canEnter(e, x, y) || this.occupied(x, y) || e.shunLight && !isBoss(e) && this.map.isLit(x, y)) return false;
     e.x = x; e.y = y;
     if (e !== this.player) TILES[this.map.get(x, y)].onMonster?.(this, e, x, y); // your snares, caltrops
     return true;
@@ -551,7 +551,7 @@ class Game {
       if (m.ally) AI[m.ai](m, this); // allies pick their own foes and follow you
       else if (m.status.fear) AI.flee(m, this);
       else if (!m.target && (m.baseAi || m.ai) !== 'multibody' && !m.busy) m.home ? this.stepToward(m, m.home) : AI.wander(m, this); // nothing to fight: guards go home (a multi-tile creature still assembles)
-      else if (m.shunLight && this.map.isLit(m.target.x, m.target.y)) AI.wander(m, this); // targets in torchlight are safe from it
+      else if (m.shunLight && !isBoss(m) && this.map.isLit(m.target.x, m.target.y)) AI.wander(m, this); // targets in torchlight are safe from it (not from a boss - a Cleric's aura would make the Lich harmless)
       else AI[m.ai](m, this);
       if (m.alive && m.trail && this.map.get(m.x, m.y) === 'floor') this.map.set(m.x, m.y, m.trail);
       if (m.alive && m.status.coiled) this.checkCoil(m);

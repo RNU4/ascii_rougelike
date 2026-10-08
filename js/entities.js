@@ -41,7 +41,7 @@ class Entity {
     if (this.steadyAim && dist(this, target) >= 3) mult *= 1 + this.steadyAim; // Steady Aim (Archer)
     const isCrit = crit || chance(this.crit);
     const raw = Math.round(((magic ? this.spellPower : this.power) + rand(-1, 1)) * mult * (isCrit ? 2 : 1));
-    const dmg = Math.max(1, raw - (pierce ? 0 : target.armor) - (target.hardened || 0)); // Hardened (Warrior)
+    const dmg = Math.max(1, Math.max(Math.ceil(raw * (1 - ARMOR_CAP)), raw - (pierce ? 0 : target.armor)) - (target.hardened || 0)); // Hardened (Warrior)
     const p = game.player, seen = game.map.visible[target.y]?.[target.x];
     if (this === p || target === p || seen) // monster-vs-monster fights only show up when you can see them
       game.log(`${this.subj} ${this.verb(verb)} ${target.obj} for ${dmg}${isCrit ? ' (critical!)' : ''}.`, target === p ? '#f88' : '#ddd');
@@ -115,8 +115,8 @@ class Player extends Entity {
 
   gainXp(n, game) {
     this.xp += n;
-    while (this.xp >= this.lvl * 20) {
-      this.xp -= this.lvl * 20;
+    while (this.xp >= xpToNext(this.lvl)) {
+      this.xp -= xpToNext(this.lvl);
       this.lvl++;
       levelUpStats(this);
       game.log(`You reach level ${this.lvl}!`, '#ff0');
@@ -132,6 +132,10 @@ class Player extends Entity {
 // Stat gains for reaching e.lvl (player and companions): +hpPerLevel HP (default 6), +2 MP, DEF every other level.
 // ATK/INT +1 every atkEvery/intEvery levels - by default casters (cls.caster) gain INT every level and ATK every other,
 // everyone else the reverse. No heal: current HP/MP only go up by what the maximums gained.
+// XP needed to go from level lvl to the next.
+const xpToNext = lvl => lvl * 30;
+// Armour soaks at most this share of a hit (DEF is subtracted, but a stack of it can't make you all but untouchable).
+const ARMOR_CAP = 0.5;
 function levelUpStats(e) {
   const c = e.cls, every = (n, def) => e.lvl % (n ?? def) === 0, { maxHp, maxMp } = e;
   e.base.hp += c.hpPerLevel ?? 6; e.base.mp += 2;

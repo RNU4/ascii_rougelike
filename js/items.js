@@ -110,7 +110,7 @@ function makeGear(depth, rarity = rollRarity(depth), pool = null, baseName = nul
   const pre = pick(PREFIXES), suf = pick(SUFFIXES);
   const affixes = rarity === 'rare' ? [pre, suf] : rarity === 'magic' ? [chance(0.5) ? pre : suf] : [];
   const stats = { ...base.stats };
-  for (const a of affixes) stats[a.stat] = (stats[a.stat] || 0) + a.per * rand(1, depth + 1);
+  for (const a of affixes) stats[a.stat] = (stats[a.stat] || 0) + a.per * rand(1, Math.ceil((depth + 1) / 2)); // (the crypt rolls at depth 4: x1-3)
   const name = [affixes.includes(pre) && pre.name, base.name, affixes.includes(suf) && suf.name].filter(Boolean).join(' ');
   return { kind: 'gear', slot: base.slot, name, base: base.name, stats, rarity, ch: SLOT_GLYPH[base.slot], color: RARITY[rarity].color, ...(base.magic && { magic: true }) };
 }

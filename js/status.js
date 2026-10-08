@@ -24,6 +24,9 @@ const STATUS = {
   shield: { label: 'shielded', color: '#6af', bg: '#1f3f6b', def: 4, css: 'shielded' },
 };
 
+// Bosses: crypt bosses (a fight `pattern`), the floor bosses that carry a tome, and the side-floors' big set-piece monsters (`lootPool`).
+const isBoss = e => !e.ally && !!(e.pattern || e.tome || e.lootPool);
+const BOSS_CC_GAP = 4;
 function applyStatus(e, key, turns, g, quiet) { // quiet: the caller already logged its own message
   if (e.partOf) e = e.partOf; // a Colossus part: its core takes the status
   const s = STATUS[key];
@@ -31,6 +34,14 @@ function applyStatus(e, key, turns, g, quiet) { // quiet: the caller already log
   if (guard) {
     if (e === g.player || g.map.visible[e.y]?.[e.x]) g.log(`${e.subj} ${e === g.player ? 'are' : 'is'} ${STATUS[guard].label} - not ${s.label}!`, STATUS[guard].color);
     return;
+  }
+  if (isBoss(e)) { // bosses can't be locked down: fearless, and a stun/freeze holds one turn, then none for BOSS_CC_GAP turns
+    const shrug = key === 'fear' || (s.skip && e.ccUntil > g.turn);
+    if (shrug) {
+      if (!quiet && g.map.visible[e.y]?.[e.x]) g.log(`${e.subj} shrugs it off!`, '#ccc');
+      return;
+    }
+    if (s.skip) { turns = 1; e.ccUntil = g.turn + BOSS_CC_GAP; }
   }
   e.status[key] = Math.max(e.status[key] || 0, turns);
   if (!quiet && (e === g.player || g.map.visible[e.y]?.[e.x])) g.log(`${e.subj} ${e === g.player ? 'are' : 'is'} ${s.label}!`, s.color); // only what you see
