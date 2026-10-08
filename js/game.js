@@ -645,7 +645,7 @@ class Game {
       if (who.lifesteal) who.hp = Math.min(who.maxHp, who.hp + who.lifesteal);
       if (who.manaOnKill) who.mp = Math.min(who.maxMp, who.mp + who.manaOnKill);
     }
-    const loot = victim.loot ? makeGear(this.depth, victim.loot, victim.lootPool) : chance(0.15) && randomItem(this.depth);
+    const loot = victim.loot ? makeGear(this.depth, victim.loot, victim.lootPool) : chance(0.08) && randomItem(this.depth);
     if (loot) this.items.push({ ...loot, x: victim.x, y: victim.y });
     if (victim.leader) { // e.g. the goblin chief
       this.log('With their chief dead, the goblins lose their nerve!', '#fc6');

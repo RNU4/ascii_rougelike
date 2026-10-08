@@ -246,7 +246,7 @@ const LEVELS = [
 
 // Test maps (debug J): a level def loaded in place of the current floor, to try out a new layout before it replaces one.
 const TEST_LEVEL = {
-  ...LEVELS[3], depth: 3, name: 'the Forgotten Crypt', size: [116, 54], count: 16, // depth: which floor it stands in for; size: 5x3 grid cells of 22x17 - room for 17x11 boss rooms
+  ...LEVELS[3], depth: 3, name: 'the Forgotten Crypt', size: [116, 54], count: 16, items: 5, // depth: which floor it stands in for; size: 5x3 grid cells of 22x17 - room for 17x11 boss rooms
   // (the bigger map would otherwise scale the war bands and hand packs way up; the mini-bosses wait in their arenas)
   groups: [{ monsters: ['hand', 'hand', 'hand', 'hand'], count: 2 }], // (the goblin raiders have their own camp room)
   gen: (w, h) => placeTorches(decorate(genCryptHub(w, h), 'bones', 40, 3), 32, 6),
@@ -296,19 +296,19 @@ const EXTRA_FLOORS = {
 
 const SIDE_LEVELS = {
   // The Goblin Warrens (once main floor 1): the chief holds court in his throne room - no stairs on from there now.
-  warrens: { ...LEVELS[1], noStairs: true, depth: 3,
+  warrens: { ...LEVELS[1], noStairs: true, depth: 3, items: 4,
     intro: 'Dug-out tunnels echo with goblin chatter. Somewhere ahead, the chief holds court on his throne.' },
   hive: {
     name: 'the Silk Hive', depth: 3, noStairs: true, intro: 'Silk everywhere - walls of it, floors of it, shapes wrapped in it. The air ticks with tiny legs. Fire would go through this place like a flood.',
     gen: (w, h) => genHive(w, h), size: [90, 44], fov: 4,
     colors: { floor: '#3e3a30' }, chars: { wall: '#' },
-    monsters: ['spiderling', 'spiderling', 'spiderling', 'spider', 'webspinner'], count: 22, items: 6, // (giant spiders: genHive puts them in roomy chambers)
+    monsters: ['spiderling', 'spiderling', 'spiderling', 'spider', 'webspinner'], count: 22, items: 4, // (giant spiders: genHive puts them in roomy chambers)
   },
   ossuary: {
     name: 'the Ossuary', intro: 'Walls of skulls, drifts of bones, cobwebs thick as curtains. Somewhere in the dark, something vast is shifting.',
     gen: (w, h) => genOssuary(w, h), size: [72, 36], fov: 4, noStairs: true, depth: 3, // (depth: the floor it lies under)
     stirBones: true, niches: true, // bone heaps that stir, burial niches (see tickBones / tickNiches)
     colors: { wall: '#5a5a66', floor: '#2e2a24' }, chars: { wall: '#' },
-    monsters: ['cryptspider', 'webspinner', 'skeleton', 'skeleton', 'skeleton', 'hand', 'hand', 'ghoul'], count: 20, items: 6,
+    monsters: ['cryptspider', 'webspinner', 'skeleton', 'skeleton', 'skeleton', 'hand', 'hand', 'ghoul'], count: 20, items: 4,
   },
 };

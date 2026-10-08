@@ -76,7 +76,7 @@ const MUSHROOM_EFFECTS = [
 
 function rollRarity(depth) {
   const r = Math.random();
-  return r < 0.05 + 0.06 * depth ? 'rare' : r < 0.35 + 0.08 * depth ? 'magic' : 'common';
+  return r < 0.02 + 0.03 * depth ? 'rare' : r < 0.30 + 0.05 * depth ? 'magic' : 'common'; // (depth 4: 14% rare, 36% magic)
 }
 
 // Gear only found in one place (not in random drops), picked by makeGear's `pool`: 'hive' = Silk Hive silk gear
@@ -125,7 +125,7 @@ const KEYS = {
 };
 
 function randomItem(depth) {
-  return chance(0.3) ? makeConsumable(pick(CONSUMABLES.filter(c => c.tier <= depth + 1))) : makeGear(depth);
+  return chance(0.45) ? makeConsumable(pick(CONSUMABLES.filter(c => c.tier <= depth + 1))) : makeGear(depth);
 }
 
 // ---- how gear looks: the paper doll (inventory, side panel) and the hero's tile ----

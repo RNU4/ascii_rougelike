@@ -473,7 +473,7 @@ const calmRoom = (map, r) => { for (let y = r.y; y < r.y + r.h; y++) for (let x 
 const SIDE_BUILDS = {
   // Treasure vault: solid granite all round but for one locked door, mid-wall on the side facing the chamber it hangs
   // off, with its own corridor straight to it (that corridor stays on the near side, so it never cuts the vault's wall).
-  // Two rare items.
+  // A rare item and a magic one.
   vault(map, r, fromRoom, mid) {
     const from = mid(fromRoom), c = mid(r), dx = from.x - c.x, dy = from.y - c.y, horiz = Math.abs(dx) > Math.abs(dy);
     const door = horiz ? { x: dx < 0 ? r.x - 1 : r.x + r.w, y: c.y } : { x: c.x, y: dy < 0 ? r.y - 1 : r.y + r.h };
@@ -482,7 +482,7 @@ const SIDE_BUILDS = {
     for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++)
       if (x < r.x || y < r.y || x >= r.x + r.w || y >= r.y + r.h) map.set(x, y, 'granite');
     map.set(door.x, door.y, 'vaultDoor');
-    map.loot.push({ x: r.x + 1, y: r.y + 1, rarity: 'rare' }, { x: r.x + r.w - 2, y: r.y + 1, rarity: 'rare' });
+    map.loot.push({ x: r.x + 1, y: r.y + 1, rarity: 'rare' }, { x: r.x + r.w - 2, y: r.y + 1, rarity: 'magic' });
   },
   // Sarcophagus ambush: a quiet tomb, coffins along both long walls, a treasure on a plinth in the middle - step up to
   // it and the coffins burst open (TILES.plinth.onEnter).
