@@ -458,8 +458,21 @@ class Game {
   // Entities with an `aura` (Clerics) carry their own light.
   auraBearers() { return [this.player, ...this.monsters.filter(m => m.alive && m.ally)].filter(e => e.aura); }
 
-  // How far you see: the level's fov - or with `mist` ({ thick, thin, period }) the rolling mist's, thick and thin by turns.
-  sightRange() { const m = this.level.mist; return m ? (Math.floor(this.turn / m.period) % 2 ? m.thin : m.thick) : this.level.fov; }
+  // How far you see: the level's fov - or with `mist` ({ thick, thin, clear, fog, ease }) the rolling mist's: `clear` turns at
+  // `thin`, then a bank rolls in over `ease` turns (sight closing in a tile at a time) to `thick` for `fog` turns, and lifts again.
+  mistPhase() {
+    const m = this.level.mist, t = this.turn % (m.clear + m.fog + 2 * m.ease);
+    if (t < m.clear) return { at: 'clear', t };
+    if (t < m.clear + m.ease) return { at: 'rolling', t: t - m.clear };
+    if (t < m.clear + m.ease + m.fog) return { at: 'fog', t: t - m.clear - m.ease };
+    return { at: 'lifting', t: t - m.clear - m.ease - m.fog };
+  }
+  sightRange() {
+    const m = this.level.mist;
+    if (!m) return this.level.fov;
+    const { at, t } = this.mistPhase(), step = (m.thin - m.thick) * (t + 1) / m.ease;
+    return Math.round({ clear: m.thin, fog: m.thick, rolling: m.thin - step, lifting: m.thick + step }[at]);
+  }
 
   updateView() {
     this.map.addMovingLights([ // auras (Clerics) and glowing creatures (wisps, fireflies)
@@ -577,8 +590,11 @@ class Game {
     if (this.level.spread) growSpread(this, this.level.spread);
     if (this.level.tide) tide(this, this.level.tide);
     if (this.level.gas) swampGas(this);
-    if (this.level.mist && this.turn % this.level.mist.period === 0)
-      this.log(this.sightRange() === this.level.mist.thick ? 'The mist rolls in thick - you can barely see past your hand.' : 'The mist thins and lifts a little.', '#9ab0a0');
+    if (this.level.mist) {
+      const { at, t } = this.mistPhase();
+      if (!t && at === 'rolling') this.log('A bank of mist comes rolling in over the water...', '#9ab0a0');
+      if (!t && at === 'lifting') this.log('The mist begins to thin and lift.', '#9ab0a0');
+    }
     for (const e of [p, ...this.monsters]) // skill cooldowns (player and companions)
       for (const k in e.cooldowns) if (--e.cooldowns[k] <= 0) delete e.cooldowns[k];
     closeDoors(this);

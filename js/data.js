@@ -214,7 +214,7 @@ const LEVELS = [
   {
     name: 'the Blackwater Mire', intro: 'Mist hangs over the black water. Boardwalks wind between the bogs - the dungeon entrance (>) lies in a sunken ruin.',
     gen: (w, h) => genSwamp(w, h), solid: 'tree', fov: 6, // mist: short sight; campfires and wisps glow through it
-    mist: { thick: 4, thin: 8, period: 16 }, gas: true, // the mist rolls in and out (Game.sightRange); swamp-gas vents puff poison (swampGas)
+    mist: { thick: 3, thin: 8, clear: 70, fog: 30, ease: 5 }, gas: true, // now and then a bank of mist rolls in (Game.sightRange); swamp-gas vents puff poison (swampGas)
     colors: { tree: '#2a4a24', floor: '#3e4630', grass: '#4a6a2a', wall: '#6f7f6a' }, chars: { tree: '♣' },
     monsters: ['leech', 'frog', 'frog', 'swamprat', 'viper'], count: 18, items: 10,
   },
