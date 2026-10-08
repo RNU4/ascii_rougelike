@@ -301,6 +301,7 @@ class Game {
   }
   leaveSide() {
     const b = this.sideBack;
+    if (!b) return this.log('These stairs lead nowhere - you came here by the debug floor menu (J).', '#888'), false;
     this.switchFloor({ depth: b.depth, testLevel: b.testLevel }, () => ({ x: b.x, y: b.y }), 'climb back up');
   }
 

@@ -1299,6 +1299,8 @@ function furnishGrotto(map) {
     shuffle(cove.cells.filter(p => map.get(p.x, p.y) === 'sand' && dist(p, k) >= 1 && dist(p, k) <= 3)).slice(0, 4)
       .forEach((p, i) => map.spawns.push({ ...p, monster: i < 2 ? 'smuggler' : 'smugglerbow' }));
     map.reserved.push(cavernBox(cove));
+    map.noSpawn ||= grid(map.w, map.h, false);
+    cove.cells.forEach(p => { map.noSpawn[p.y][p.x] = true; }); // (you never start among the crew)
   }
   // One or two tidal caves off ordinary caverns (clams in them), and crabs foraging out on the tidal flats.
   let caves = rand(1, 2);

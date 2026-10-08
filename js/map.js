@@ -176,7 +176,7 @@ const TILES = {
   crackedbone: { ch: '%', color: '#c4a870', bg: '#33291a', walk: false, opaque: true, breakable: true, name: 'cracked bone wall',
     breakTo: 'bones', hitMsg: 'You strike the cracked bone wall. It shudders... ', breakMsg: 'The cracked wall gives way in a clatter of bones - there is a hidden chamber beyond!' },
   // The Crystal Sanctum (genSanctum): crystal galleries.
-  crystalwall: { ch: '▓', color: '#7fd8ff', bg: '#10283a', walk: false, opaque: true, name: 'crystal wall' },
+  crystalwall: { ch: '▓', color: '#3f86a8', bg: '#0c1c2a', walk: false, opaque: true, name: 'crystal wall' },
   crackedcrystal: { ch: '▒', color: '#c0f4ff', bg: '#1c3a50', walk: false, opaque: true, breakable: true, name: 'cracked crystal',
     breakTo: 'shards', hitMsg: 'You strike the cracked crystal. It rings and splinters... ', breakMsg: 'The crystal shatters - a hidden vault glitters beyond!' },
   shards:    { ch: ',', color: '#a0e8ff', walk: true, name: 'crystal shards' },
