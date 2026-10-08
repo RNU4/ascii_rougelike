@@ -45,6 +45,11 @@ class Entity {
     const p = game.player, seen = game.map.visible[target.y]?.[target.x];
     if (this === p || target === p || seen) // monster-vs-monster fights only show up when you can see them
       game.log(`${this.subj} ${this.verb(verb)} ${target.obj} for ${dmg}${isCrit ? ' (critical!)' : ''}.`, target === p ? '#f88' : '#ddd');
+    if (this.lunge) { // (a lunging attacker: darts at its target, and a bite mark snaps shut on it - css lunge / bite)
+      const d = { '0,-1': 'n', '1,-1': 'ne', '1,0': 'e', '1,1': 'se', '0,1': 's', '-1,1': 'sw', '-1,0': 'w', '-1,-1': 'nw' }[Math.sign(target.x - this.x) + ',' + Math.sign(target.y - this.y)];
+      if (d) this.flashCss = { turn: game.turn, css: 'lunge lg-' + d };
+      game.fx.float(target, 'V', '#ffd0d8', { css: 'bite' });
+    }
     target.hurt(dmg, game, this);
     const thorns = target.gearStat('thorns'); // (bone gear) striking it in melee hurts
     if (thorns && this.alive && !magic && dist(this, target) <= 1) {

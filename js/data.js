@@ -57,7 +57,7 @@ const MONSTERS = {
   viper:    { name: 'marsh viper', ch: 's', color: '#7c4', hp: 6, atk: 3, def: 0, xp: 4, ai: 'chase', onHit: { poison: 3 }, corpse: null },
   // The Mire Mother (the Blackwater Mire's boss, in her pool - addMireLair): a monstrous leech under the bog. See BOSS_PATTERNS.miremother.
   miremother: { name: 'Mire Mother', ch: 'Θ', color: '#ff7a90', hp: 55, atk: 6, def: 1, xp: 50, ai: 'boss', pattern: 'miremother', baseAi: 'multibody',
-    size: 7, part: 'mirepart', form: 'chain', aquatic: true, swim: true, drain: true, churnCd: 2, alwaysAwake: true, guard: true,
+    size: 7, part: 'mirepart', form: 'chain', aquatic: true, lunge: true, swim: true, drain: true, churnCd: 2, alwaysAwake: true, guard: true,
     shedMsg: 'A length of the Mire Mother goes limp and sinks!', loot: 'rare', lootPool: 'reed', corpse: null },
   mirepart: { name: 'Mire Mother', ch: 'o', color: '#b05868', hp: 1, atk: 0, def: 1, xp: 0, ai: 'segment', swim: true, corpse: null },
   // The bog witch (her hut, addWitchHut): curses from the doorway and keeps her distance.

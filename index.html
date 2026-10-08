@@ -65,6 +65,14 @@
   @keyframes lich { from { color: #9fe890; text-shadow: 0 0 0.15em #3a8a2a; box-shadow: inset 0 0 0.2em #1a4a12; }
                     to { color: #f4fff0; text-shadow: 0 0 0.4em #8fff70, 0 0 0.8em #4fcf30; box-shadow: inset 0 0 0.5em #2f7a20; } }
   /* Hatching spiderlings (css hatch): pop out small and grow. A bursting egg sac (float css burst): swells and fades. */
+  /* Lunge (monster field `lunge`, flashCss 'lunge lg-<dir>'): the attacker darts at its target and snaps back; a bite
+     mark (float css bite) snaps shut on the target. */
+  :is(#map.square, #actors) span.lunge { animation: lunge 0.3s ease-out; }
+  span.lg-n { --lx: 0; --ly: -1; } span.lg-ne { --lx: 1; --ly: -1; } span.lg-e { --lx: 1; --ly: 0; } span.lg-se { --lx: 1; --ly: 1; }
+  span.lg-s { --lx: 0; --ly: 1; } span.lg-sw { --lx: -1; --ly: 1; } span.lg-w { --lx: -1; --ly: 0; } span.lg-nw { --lx: -1; --ly: -1; }
+  @keyframes lunge { 0% { transform: none; } 35% { transform: translate(calc(var(--lx) * 0.55em), calc(var(--ly) * 0.55em)) scale(1.2); } 100% { transform: none; } }
+  #floats span.bite { font-family: "IBM BIOS", Consolas, monospace; font-weight: normal; height: 1em; text-shadow: 0 0 0.3em #ff6080; animation: bite 0.35s ease-out both; }
+  @keyframes bite { 0% { transform: scale(1.6, 0.3); opacity: 0; } 40% { transform: scale(1.1, 1); opacity: 1; } 100% { transform: scale(0.8); opacity: 0; } }
   :is(#map.square, #actors) span.hatch { animation: hatch 0.35s ease-out both; }
   @keyframes hatch { 0% { transform: scale(0.2); opacity: 0.3; } 70% { transform: scale(1.2); opacity: 1; } 100% { transform: none; } }
   /* A boss's blade sweeping through tiles (slashFx): a bright slash flaring and fading on each, one after another. */
