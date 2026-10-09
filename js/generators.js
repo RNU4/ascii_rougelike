@@ -728,6 +728,9 @@ function genBoneTest(w, h) {
 
 // The boss crypt (below the Goblin Warrens): genCryptChambers, rebuilt (up to 10 times) until both ways down to the
 // side-floors - the Ossuary, the Silk Hive - made it in.
+// The crypt's mini-boss arenas (ARENA_BUILDS keys), in the order you meet them; the Lich's hall always comes last.
+// (left out for now: the Wight's tomb, ARENA_BUILDS.wight, and the flooded crypt, ARENA_BUILDS.flooded)
+const CRYPT_BOSS_ORDER = ['banshee', 'deathknight', 'serpent'];
 const HUB_STAIRS = ['bonestair', 'hivestair'], HUB_STAIRS_ROOMS = ['ossuarystair', 'hivestair']; // (the warrens are the floor above now)
 // ...and until at least one of them can be reached from the start without going through a boss room (its tiles or ring).
 function genCryptHub(w, h) {
@@ -764,11 +767,11 @@ function genCryptChambers(w, h) {
   const corridor = (a, b) => orthoPath(mid(a), mid(b)).forEach(p => map.get(p.x, p.y) === 'wall' && map.set(p.x, p.y, 'floor'));
 
   const trialAt = path.length >> 1, last = path.length - 1;
-  // Main-path roles: the mini-boss arenas, in random order along the path (a short path leaves a random one out).
-  const role = {}, roles = shuffle(['deathknight', 'banshee', 'serpent']); // (left out for now: the Wight's tomb, ARENA_BUILDS.wight, and the flooded crypt, ARENA_BUILDS.flooded)
+  // Main-path roles: the mini-boss arenas, always in this order along the path (easiest first; random chambers, though).
+  const role = {}, roles = CRYPT_BOSS_ORDER;
   const slots = shuffle(path.map((_, i) => i).filter(i => i > 0 && i !== trialAt && i !== last));
   if (slots.length > roles.length) slots.push(...slots.splice(slots.indexOf(1), 1)); // (the chamber after the start stays plain if it can)
-  slots.forEach((i, k) => { if (k < roles.length) role[i] = roles[k]; });
+  slots.slice(0, roles.length).sort((a, b) => a - b).forEach((i, k) => { role[i] = roles[k]; }); // (a short path leaves the last ones out)
   // The first gate: the first boss arena or the trial chamber along the path - a way down to a side-floor must hang off
   // something before it, so a new run always has somewhere to level up first.
   const firstGate = Math.min(trialAt, ...Object.keys(role).map(Number));
