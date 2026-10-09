@@ -1,6 +1,6 @@
 # Crystal Depths
 
-Et ASCII-roguelike i browseren. Kæmp dig gennem den glemte krypt, besejr dens bosser og gør krav på Krystallen af Evigheder.
+Et turbaseret ASCII-roguelike, der spilles i browseren.
 
 ## Sådan spiller du
 
@@ -12,7 +12,7 @@ npx http-server . -p 8124
 
 og gå ind på http://localhost:8124.
 
-Vælg en klasse (Warrior, Archer, Cleric, Mage, Rogue, Necromancer eller Trickster) og begiv dig ned i krypten. Sideetager som the Ossuary, the Goblin Warrens og the Silk Hive giver erfaring og udstyr, før du tager imod bosserne.
+Vælg en class (Warrior, Archer, Cleric, Mage, Rogue, Necromancer eller Trickster). Et run går gennem the Blackwater Mire og the Goblin Warrens til the Forgotten Crypt, hvor bosserne venter. Fra krypten fører trapper ned til sideetagerne the Ossuary og the Silk Hive, hvor du kan samle erfaring og udstyr. Målet er at finde Crystal of Ages.
 
 ## Taster
 
