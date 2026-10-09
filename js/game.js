@@ -205,8 +205,11 @@ class Game {
   stepAway(m, from) { return this.stepToward(m, { x: 2 * m.x - from.x, y: 2 * m.y - from.y }); }
   // A monster's `shot` ({ ch, color, verb, status, mult, magic }) customises its projectile's look, wording, on-hit
   // status, damage multiplier and whether it scales with INT.
+  // A shot at your party gives the shooter away: it shows for 2 turns (spotted, see updateView) even out of your sight -
+  // archers outrange the crypt's 4-tile sight, and would otherwise pick you off unseen.
   shoot(m, target) {
     const s = m.shot || {};
+    if (target === this.player || target.ally) m.spotted = this.turn + 2;
     this.fx.bolt(m, target, s.ch || '*', s.color || m.color);
     m.attack(target, this, { verb: s.verb || 'shoot', status: s.status, mult: s.mult, magic: !!s.magic });
   }
@@ -490,6 +493,7 @@ class Game {
       this.map.visible = party;
     }
     this.sight = this.map.visible; // what you really see (monsters wake from this, even with the fog lifted)
+    for (const m of this.monsters) if (m.alive && m.spotted >= this.turn) this.map.visible[m.y][m.x] = this.map.seen[m.y][m.x] = true; // (a shooter gives itself away)
     if (this.revealAll) this.map.visible = this.map.seen = grid(this.map.w, this.map.h, true); // debug: no fog (M)
     this.distMap = this.map.distanceFrom(this.player.x, this.player.y, (x, y) => this.map.passable(x, y));
     this.spotTraps();
