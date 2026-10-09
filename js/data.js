@@ -272,15 +272,16 @@ const TEST_LEVEL = {
   // (the bigger map would otherwise scale the war bands and hand packs way up; the mini-bosses wait in their arenas)
   groups: [{ monsters: ['hand', 'hand', 'hand', 'hand'], count: 2 }], // (the goblin raiders have their own camp room)
   gen: (w, h) => placeTorches(decorate(genCryptHub(w, h), 'bones', 40, 3), 32, 6),
-  chars: { wall: '#' },
+  chars: { wall: '#' }, final: true, // (the run's last floor: the Crystal of Ages waits in the Lich's sealed vault - map.stairs)
+  intro: 'Darkness presses in, broken only by guttering torches. The Crystal of Ages lies behind a sealed door - and the Lich holds its key.',
   // read on the entrance hall's plaque (TILES.plaque.onBump)
-  plaque: 'Here the faithful sleep. Their champions keep the key to the vault; their master keeps the way below. Walk the runes, and earn the favour of the dead.',
+  plaque: 'Here the faithful sleep. Their champions keep the key to the vault; their master keeps the Crystal. Walk the runes, and earn the favour of the dead.',
 };
 
 // A run's main floors, top to bottom (Game.changeLevel walks this list): the Blackwater Mire (where a run starts) ->
 // the Goblin Warrens (the way down is by the chief's throne) -> the boss crypt (side-floors off it to level up in; the
-// way down is in the Lich's vault) -> the Crystal Sanctum (the last floor: the Crystal of Ages).
-const RUN_FLOORS = [LEVELS[0], LEVELS[1], TEST_LEVEL, LEVELS[5]];
+// last floor for now: the Crystal of Ages lies in the Lich's vault).
+const RUN_FLOORS = [LEVELS[0], LEVELS[1], TEST_LEVEL];
 // -> { depth, testLevel } for Game: a main floor by its place in LEVELS, anything else (the crypt) loads as testLevel.
 const runFloor = def => LEVELS.includes(def) ? { depth: LEVELS.indexOf(def), testLevel: null } : { depth: def.depth, testLevel: def };
 
