@@ -410,7 +410,7 @@ const BOSS_PATTERNS = {
   },
   // The Mire Mother (her pool in the Blackwater Mire): a huge leech - an aquatic chain multibody, her body trailing through
   // the bog behind her head (water only: `aquatic`, see roams). Every 5 turns, when you're within 8 and within 2 of open water, the bog beside you churns (the 3x3 round you
-  // marked) - next turn she dives and lunges up out of it (her body sinks away and uncoils again round the new spot): x1.5
+  // marked) - next turn she dives and lunges up out of it (her body sinks away and uncoils again round the new spot): x1.3
   // and stuck a turn for everyone still there, draining what she bites.
   // Step back from the water's edge to make her miss. At half health a brood of 3 giant leeches swarms out of the bog
   // around her. Otherwise she swims after you through the bog and bites from the water's edge (baseAi multibody).
@@ -430,7 +430,7 @@ const BOSS_PATTERNS = {
       tiles.forEach(c => g.fx.flash(c, '#3a1a20'));
       const hit = foesOn(g, m, tiles);
       if (seen || hit.includes(g.player) || g.map.visible[m.y]?.[m.x]) g.log(hit.length ? 'The Mire Mother erupts from the bog and latches on!' : 'The Mire Mother erupts from the bog - and snaps shut on nothing.', m.color);
-      hit.forEach(e => { m.attack(e, g, { mult: 1.5, verb: 'latch onto' }); if (e.alive) applyStatus(e, 'stuck', 1, g); });
+      hit.forEach(e => { m.attack(e, g, { mult: 1.3, verb: 'latch onto' }); if (e.alive) applyStatus(e, 'stuck', 1, g); });
       return true;
     }
     if (!m.brood && m.hp <= m.maxHp / 2) {
@@ -645,7 +645,7 @@ const BOSS_PATTERNS = {
   },
   // The Death Knight: the executioner's swing - raises his blade over the 3 tiles in front of his foe for a turn (marked),
   // then cleaves them for double damage (every 4 turns); at half health, "Rise, my guard!" - the suits of armour in his hall
-  // wake as animated armour, two at a time every 3 turns (each trembles a turn first; 6 in all, at most 4 standing). His charge and taunt stay (baseAi caster).
+  // wake as animated armour, two at a time every 3 turns (each trembles a turn first; 4 in all, at most 3 standing). His charge and taunt stay (baseAi caster).
   deathknight(m, g) {
     const t = m.target, seen = g.map.visible[m.y]?.[m.x], arena = g.map.arenas?.find(a => inRect(a.r, m));
     if (m.rallied && arena) { // (the guard rises whatever else he does this turn)
@@ -657,8 +657,8 @@ const BOSS_PATTERNS = {
       });
       if (stirring.length && seen) g.log('The suits of armour step down from their stands!', '#b0bcd4');
       const standing = g.monsters.filter(o => o.alive && o.name === MONSTERS.animatedarmour.name).length;
-      if (!stirring.length && --m.rallyCd <= 0 && (m.woken || 0) < 6 && standing < 4) { // (6 in all, 4 up at once at most)
-        const wake = shuffle(g.map.cells((x, y) => inRect(r, { x, y }) && g.map.get(x, y) === 'armour')).slice(0, Math.min(2, 6 - (m.woken || 0)));
+      if (!stirring.length && --m.rallyCd <= 0 && (m.woken || 0) < 4 && standing < 3) { // (4 in all, 3 up at once at most)
+        const wake = shuffle(g.map.cells((x, y) => inRect(r, { x, y }) && g.map.get(x, y) === 'armour')).slice(0, Math.min(2, 4 - (m.woken || 0)));
         m.woken = (m.woken || 0) + wake.length;
         wake.forEach(c => g.map.set(c.x, c.y, 'armourstir'));
         if (wake.length && seen) g.log('Two suits of armour shudder on their stands...', '#b0bcd4');

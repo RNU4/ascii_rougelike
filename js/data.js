@@ -56,7 +56,7 @@ const MONSTERS = {
   swamprat: { name: 'swamp rat', ch: 'r', color: '#9a8a58', hp: 4, atk: 2, def: 0, xp: 2, ai: 'chase' },
   viper:    { name: 'marsh viper', ch: 's', lunge: true, color: '#7c4', hp: 6, atk: 3, def: 0, xp: 4, ai: 'chase', onHit: { poison: 3 }, corpse: null },
   // The Mire Mother (the Blackwater Mire's boss, in her pool - addMireLair): a monstrous leech under the bog. See BOSS_PATTERNS.miremother.
-  miremother: { name: 'Mire Mother', ch: 'Θ', color: '#ff7a90', hp: 55, atk: 6, def: 1, xp: 50, ai: 'boss', pattern: 'miremother', baseAi: 'multibody',
+  miremother: { name: 'Mire Mother', ch: 'Θ', color: '#ff7a90', hp: 55, atk: 5, def: 1, xp: 50, ai: 'boss', pattern: 'miremother', baseAi: 'multibody',
     size: 7, part: 'mirepart', form: 'chain', aquatic: true, lunge: true, swim: true, drain: true, churnCd: 2, alwaysAwake: true, guard: true,
     shedMsg: 'A length of the Mire Mother goes limp and sinks!', loot: 'rare', lootPool: 'reed', corpse: null },
   mirepart: { name: 'Mire Mother', ch: 'o', color: '#b05868', hp: 1, atk: 0, def: 1, xp: 0, ai: 'segment', swim: true, corpse: null },
@@ -104,7 +104,7 @@ const MONSTERS = {
   bowman:   { name: 'bone archer', ch: 'k', color: '#ddb', hp: 10, atk: 6, def: 1, xp: 11, ai: 'ranged', range: 6, faction: 'undead' },
   ghoul:    { name: 'ghoul', ch: 'u', color: '#7a6', hp: 12, atk: 6, def: 1, xp: 12, ai: 'fast', faction: 'undead' },
   // Mini-bosses. Death Knight: charges you down from close range and taunts your companions onto itself.
-  deathknight: { name: 'Death Knight', ch: 'K', color: '#8a9ab8', hp: 95, atk: 14, def: 4, xp: 35, ai: 'boss', pattern: 'deathknight', baseAi: 'caster', faction: 'undead',
+  deathknight: { name: 'Death Knight', ch: 'K', color: '#8a9ab8', hp: 85, atk: 14, def: 4, xp: 35, ai: 'boss', pattern: 'deathknight', baseAi: 'caster', faction: 'undead',
     skills: ['charge', 'taunt'], skillRange: { charge: 3 }, loot: 'magic' }, // skillRange: shorter reach than the Warrior's
   // Animated armour (the Death Knight's guard): a suit of armour from his hall, woken when he's brought to half health.
   animatedarmour: { name: 'animated armour', ch: 'Ω', color: '#b0bcd4', hp: 18, atk: 6, def: 4, xp: 12, ai: 'slow', faction: 'undead', corpse: null },
