@@ -56,6 +56,7 @@ function playRun(clsKey = 'warrior', { maxTurns = 40000, floorTurns = 5000, quie
     if (key !== floorKey) { newFloor(); if (g.side) visitedSides.add(g.side === 'ossuary' ? 'bonestair' : 'hivestair'); }
     const q = p();
     for (const i of [...q.inv]) if (better(i)) g.equip(i); // wear upgrades (no turn in the bot's book)
+    for (const i of [...q.inv]) if (i.kind === 'gear' && !better(i)) q.inv.splice(q.inv.indexOf(i), 1); // and leave the rest behind (a full pack can't take the Crypt Key)
     const dist0 = g.map.distanceFrom(q.x, q.y, pass);
     const foes = g.monsters.filter(m => m.alive && !m.ally && !m.captive && !m.partOf && g.hostile(q, m) && g.seesMonster(m) && g.map.visible[m.y]?.[m.x])
       .filter(m => dist(m, q) <= 1 || (dist0[m.y][m.x] <= 14 && (chase.get(m)?.n || 0) < 30) || m.shot && g.map.hasLos(q, m))
