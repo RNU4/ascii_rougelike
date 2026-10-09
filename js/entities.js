@@ -29,7 +29,7 @@ class Entity {
   }
   get subj() { return this.name[0].toUpperCase() + this.name.slice(1); }
   get obj() { return 'the ' + this.name; }
-  verb(v) { return v + (/(ch|sh|s|x)$/.test(v) ? 'es' : 's'); } // scorch -> scorches
+  verb(v) { return v.replace(/^\S+/, w => w + (/(ch|sh|s|x)$/.test(w) ? 'es' : 's')); } // scorch -> scorches, latch onto -> latches onto
 
   // Returns damage dealt. `status` (or the attacker's onHit) is applied to the target on hit.
   // magic: scales with INT instead of ATK - on by default while a skill marked `magic` is being cast (game.casting).
