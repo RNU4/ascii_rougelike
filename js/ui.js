@@ -38,7 +38,7 @@ Object.assign(Game.prototype, {
       return `  <b style="color:${c.color}">${i + 1}) ${c.title.padEnd(12)}</b> ${tag} HP ${c.hp}  ATK ${c.atk}  INT ${c.int}  DEF ${c.def}  MP ${c.mp}\n` +
         `     ${c.desc}\n     Skills: <span style="color:#ff8">${tree[0]}</span>, ${tree.slice(1).join(', ')} + ${t.pool.length} more to find in tomes\n`;
     });
-    return `\n  <b style="color:#0ff">C R Y S T A L   D E P T H S</b>\n\n  Descend ${LEVELS.length - 1} dungeon levels and claim the Crystal of Ages.\n\n  Choose your class:\n\n${classes.join('\n')}`;
+    return `\n  <b style="color:#0ff">C R Y S T A L   D E P T H S</b>\n\n  Claim the Crystal of Ages.\n\n  Choose your class:\n\n${classes.join('\n')}`;
   },
 
   charSize() {
