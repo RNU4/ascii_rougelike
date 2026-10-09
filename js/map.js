@@ -160,7 +160,6 @@ const TILES = {
   // breakable: counts as a way through when levels are joined up / checked, like a locked door.
   // A way down into a side-floor (side: its SIDE_LEVELS key) - Game.takeStairs -> enterSide.
   bonestair: { ch: '>', color: '#f0e6c8', bg: '#4a3a20', walk: true, side: 'ossuary', name: 'bone stairway down' },
-  warrenstair: { ch: '>', color: '#e0a860', bg: '#3a2410', walk: true, side: 'warrens', name: 'goblin tunnel down' },
   hivestair: { ch: '>', color: '#efe8d0', bg: '#3a3832', walk: true, side: 'hive', name: 'silk-choked shaft down' },
   // The Silk Hive. Silk (walls, strands, cocoons, egg sacs) catches fire: burnsTo silkfire, which spreads (tickFire).
   silkwall:  { ch: '#', color: '#e8e4d4', bg: '#3a3832', walk: false, opaque: true, burnsTo: 'silkfire', name: 'wall of webbing' },

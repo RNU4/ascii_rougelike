@@ -272,10 +272,16 @@ const TEST_LEVEL = {
   // (the bigger map would otherwise scale the war bands and hand packs way up; the mini-bosses wait in their arenas)
   groups: [{ monsters: ['hand', 'hand', 'hand', 'hand'], count: 2 }], // (the goblin raiders have their own camp room)
   gen: (w, h) => placeTorches(decorate(genCryptHub(w, h), 'bones', 40, 3), 32, 6),
-  chars: { wall: '#' }, noUp: true, // (a run starts here - no way back up)
+  chars: { wall: '#' },
   // read on the entrance hall's plaque (TILES.plaque.onBump)
   plaque: 'Here the faithful sleep. Their champions keep the key to the vault; their master keeps the way below. Walk the runes, and earn the favour of the dead.',
 };
+
+// A run's main floors, top to bottom (Game.changeLevel walks this list): the Blackwater Mire (where a run starts) ->
+// the Goblin Warrens (the way down is by the chief's throne) -> the boss crypt (side-floors off it to level up in).
+const RUN_FLOORS = [LEVELS[0], LEVELS[1], TEST_LEVEL];
+// -> { depth, testLevel } for Game: a main floor by its place in LEVELS, anything else (the crypt) loads as testLevel.
+const runFloor = def => LEVELS.includes(def) ? { depth: LEVELS.indexOf(def), testLevel: null } : { depth: def.depth, testLevel: def };
 
 // Side-floors: optional areas off a main floor, reached by a tile with `side` (e.g. the crypt's bone stairway) and left
 // by their stairs back up (Game.enterSide / leaveSide). Persisted like any floor, under 'depth:key'. noStairs: no way
@@ -317,9 +323,6 @@ const EXTRA_FLOORS = {
 };
 
 const SIDE_LEVELS = {
-  // The Goblin Warrens (once main floor 1): the chief holds court in his throne room - no stairs on from there now.
-  warrens: { ...LEVELS[1], noStairs: true, depth: 3, items: 4,
-    intro: 'Dug-out tunnels echo with goblin chatter. Somewhere ahead, the chief holds court on his throne.' },
   hive: {
     name: 'the Silk Hive', depth: 3, noStairs: true, intro: 'Silk everywhere - walls of it, floors of it, shapes wrapped in it. The air ticks with tiny legs. Fire would go through this place like a flood.',
     gen: (w, h) => genHive(w, h), size: [90, 44], fov: 4,

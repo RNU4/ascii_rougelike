@@ -49,7 +49,7 @@ class Game {
     this.alliesHold = false; this.allyStance = 'aggressive'; // a new game starts with fresh orders
     this.fallen = []; // dead companions (Resurrection)
     this.side = this.sideBack = null;
-    this.testLevel = TEST_LEVEL; this.depth = TEST_LEVEL.depth; // a run starts in the boss crypt (side-floors off it to level up in)
+    Object.assign(this, runFloor(RUN_FLOORS[0])); // a run starts in the swamp (RUN_FLOORS: swamp -> goblin warrens -> boss crypt)
     this.addItem({ ...makeConsumable(CONSUMABLES[0]), count: 2 });
     this.loadLevel();
   }
@@ -84,7 +84,7 @@ class Game {
 
     const p = this.player;
     Object.assign(p, start);
-    if (def.noStairs) m.cells((x, y) => m.get(x, y) === 'stairs').forEach(c => m.set(c.x, c.y, 'floor')); // (a side-floor: only the way back up - e.g. the warrens' throne-room stairs go)
+    if (def.noStairs) m.cells((x, y) => m.get(x, y) === 'stairs').forEach(c => m.set(c.x, c.y, 'floor')); // (a side-floor: only the way back up)
     const up = this.depth > 0 && !def.noUp; // (noUp: where a run starts)
     if (up) m.set(start.x, start.y, 'upstairs'); // the way back up
     this.upStairs = up ? start : null;
@@ -290,8 +290,10 @@ class Game {
   }
   // Main stairs: one floor down / up, arriving on the stairs you came through. (Leaving a test map returns to the
   // normal floors.)
+  // On a run floor (RUN_FLOORS) the stairs lead to the next / previous one in that list.
   changeLevel(dir) {
-    this.switchFloor({ depth: this.depth + dir }, s => ({ ...(dir > 0 ? s.upStairs : s.stairs) }), dir > 0 ? 'descend' : 'climb back up');
+    const i = RUN_FLOORS.indexOf(this.level), next = i >= 0 && RUN_FLOORS[i + dir];
+    this.switchFloor(next ? runFloor(next) : { depth: this.depth + dir }, s => ({ ...(dir > 0 ? s.upStairs : s.stairs) }), dir > 0 ? 'descend' : 'climb back up');
   }
   // Into a side-floor (a tile with `side`), and back out onto the tile you went in by.
   enterSide(name) {

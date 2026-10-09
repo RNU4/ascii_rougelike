@@ -504,16 +504,6 @@ const SIDE_BUILDS = {
     calmRoom(map, r);
     addDoors(map, r, CRYPT_DOORS);
   },
-  // The way down to the Goblin Warrens (a side-floor): a dug-out tunnel mouth - trampled dirt, supply crates and barrels
-  // by the walls, a guttering torch, the tunnel in the middle.
-  warrenstair(map, r) {
-    const c = roomMid(r);
-    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) map.set(x, y, 'dirt');
-    edgeProp(map, r, r.x, r.y, 'crate'); edgeProp(map, r, r.x + r.w - 1, r.y + r.h - 1, 'barrel');
-    map.set(c.x, c.y, 'warrenstair');
-    calmRoom(map, r);
-    addDoors(map, r, CRYPT_DOORS);
-  },
   // The way down to the Silk Hive (a side-floor): a shaft choked with silk - webbed walls, strands and cobwebs underfoot.
   hivestair(map, r) {
     const c = roomMid(r);
@@ -736,9 +726,9 @@ function genBoneTest(w, h) {
   return placeTorches(map, 4, 4);
 }
 
-// The boss crypt (where a run starts): genCryptChambers, rebuilt (up to 10 times) until all three ways down to the
-// side-floors - the Ossuary, the Goblin Warrens, the Silk Hive - made it in.
-const HUB_STAIRS = ['bonestair', 'warrenstair', 'hivestair'], HUB_STAIRS_ROOMS = ['ossuarystair', 'warrenstair', 'hivestair'];
+// The boss crypt (below the Goblin Warrens): genCryptChambers, rebuilt (up to 10 times) until both ways down to the
+// side-floors - the Ossuary, the Silk Hive - made it in.
+const HUB_STAIRS = ['bonestair', 'hivestair'], HUB_STAIRS_ROOMS = ['ossuarystair', 'hivestair']; // (the warrens are the floor above now)
 // ...and until at least one of them can be reached from the start without going through a boss room (its tiles or ring).
 function genCryptHub(w, h) {
   let map;
@@ -791,8 +781,8 @@ function genCryptChambers(w, h) {
   const vault = { x: block.x + (ARENA.w - 5 >> 1), y: up ? block.y : block.y + ARENA.h + 1, w: 5, h: 3 };
   // Side rooms first choose their cells (off path chambers other than the trial and the boss hall). The special ones
   // come first, in this order, while free cells last; then random CRYPT_ROOMS.
-  // (the three ways down to the side-floors first, so they always find a cell - genCryptHub rebuilds if one doesn't)
-  const sides = [], queue = [{ name: 'ossuarystair', w: 5, h: 5 }, { name: 'warrenstair', w: 5, h: 5 }, { name: 'hivestair', w: 5, h: 5 },
+  // (the ways down to the side-floors first, so they always find a cell - genCryptHub rebuilds if one doesn't)
+  const sides = [], queue = [{ name: 'ossuarystair', w: 5, h: 5 }, { name: 'hivestair', w: 5, h: 5 },
     { name: 'vault', w: 5, h: 3 }, { name: 'camp', w: 9, h: 7 }, { name: 'ambush', w: 7, h: 5 }];
   const extras = CRYPT_ROOMS.filter(t => t.name !== 'ossuary').flatMap(t => Array(t.weight).fill(t)); // (the Ossuary is its own floor now)
   // Hosts: rooms a side branch can hang off - path chambers (not the trial or the boss hall), and then side rooms too
@@ -810,7 +800,7 @@ function genCryptChambers(w, h) {
     sides.push(s);
     if (t.name !== 'vault') hosts.push({ cell: n, room: s.r, side: true, early: host.early, arena: host.arena });
   };
-  const earlyStair = pick(HUB_STAIRS_ROOMS); // (one of the three, at random, always before the first gate)
+  const earlyStair = pick(HUB_STAIRS_ROOMS); // (one of them, at random, always before the first gate)
   for (const t of queue) {
     const fits = h => freeNext(h) && (!HUB_STAIRS_ROOMS.includes(t.name) || !h.arena) && (t.name !== earlyStair || h.early);
     const h = shuffle([...hosts]).find(fits);
