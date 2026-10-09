@@ -736,14 +736,11 @@ class Game {
     if (known.length > ACTIVE_SKILLS) known.splice(ACTIVE_SKILLS, 0, { text: this.inCombat()
       ? '<span style="color:#f88">  Reserve - enemies in sight: no swapping until the fight is over.</span>'
       : `<span style="color:#777">  Reserve - not usable; move one into the top ${ACTIVE_SKILLS} to swap it in (only out of combat):</span>` });
-    const upcoming = tree.core.filter(id => !p.skills.includes(id))
-      .map(id => ({ text: `<span style="color:#777">  Lv ${SKILLS[id].lvl}  ${this.skillLine(SKILLS[id])}</span>` }));
     const unfound = tree.pool.filter(id => !p.skills.includes(id));
     const books = unfound.length ? [{ text: `<span style="color:#777">  Still to find: ${unfound.map(id => SKILLS[id].name).join(', ')}</span>` }] : [];
     this.openMenu('SKILLS', [
       { text: this.grabSkill == null ? `Active - ${ACTIVE_SKILLS} slots (number keys to use; Enter on one to pick it up and reorder):` : 'Moving: Up/Down to move, Enter to drop' },
       ...known, { text: '' },
-      ...(upcoming.length ? [{ text: 'Core skills you unlock by levelling up:' }, ...upcoming, { text: '' }] : []),
       { text: `Other skills are found in ${p.cls.title}'s Tomes (pick 1 of ${TOME_CHOICES}).` }, ...books,
     ]);
   }

@@ -479,12 +479,12 @@ function aiCast(g, m, foe) {
 // wait in reserve until you swap them in (K: pick one up and move it). Companions aren't limited.
 const ACTIVE_SKILLS = 5;
 
-// Each class: core = the essentials, unlocked automatically at each skill's level (core[0] known from the start); pool = everything else,
+// Each class: core = the essentials, all known from the start (for now - their `lvl` no longer gates them); pool = everything else,
 // only found during a run - reading your class's tome offers TOME_CHOICES random unknown pool skills to keep one
 // (Game.readBook), so the same class plays differently run to run. basic: a free attack known from the start.
 // Companions: core + a few random pool skills, and another now and then as they level (makeCaptive, growCompanion).
 const TOME_CHOICES = 3;
-const startingSkills = cls => [SKILL_TREES[cls.key].basic, SKILL_TREES[cls.key].core[0]].filter(Boolean); // basic attack on key 1
+const startingSkills = cls => [SKILL_TREES[cls.key].basic, ...SKILL_TREES[cls.key].core].filter(Boolean); // basic attack on key 1
 const SKILL_TREES = {
   warrior:     { core: ['cleave', 'charge'], pool: ['warcry', 'ironskin', 'shieldbash', 'whirlwind', 'taunt', 'earthshatter', 'secondwind'] },
   archer:      { basic: 'bowshot', core: ['aimedshot', 'roll'], pool: ['pinshot', 'volley', 'snaretrap', 'rain', 'piercing', 'explosive', 'snipe'] },

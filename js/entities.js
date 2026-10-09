@@ -123,8 +123,6 @@ class Player extends Entity {
       this.lvl++;
       levelUpStats(this);
       game.log(`You reach level ${this.lvl}!`, '#ff0');
-      // Core skills unlock by themselves once you're high enough (the rest come from tomes).
-      SKILL_TREES[this.cls.key].core.filter(id => !this.skills.includes(id) && (SKILLS[id].lvl || 1) <= this.lvl).forEach(id => this.learn(id, game));
       const buddies = game.monsters.filter(m => m.companion && m.alive);
       buddies.forEach(growCompanion);
       if (buddies.length) game.log(`Your ${buddies.length > 1 ? 'companions grow' : buddies[0].name + ' grows'} stronger too.`, '#8cf');
@@ -153,13 +151,13 @@ function levelUpStats(e) {
   e.recalc(); e.hp += e.maxHp - maxHp; e.mp += e.maxMp - maxMp;
 }
 
-// Companions grow a level alongside the player, with the same gains. They learn their next core skill once its level
-// allows, and on every other level a random pool skill (they find their own tomes, so to speak).
+// Companions grow a level alongside the player, with the same gains. They know their core skills from the start, and
+// learn a random pool skill every other level (they find their own tomes, so to speak).
 function growCompanion(m) {
   m.lvl = (m.lvl || 1) + 1;
   levelUpStats(m);
-  const { core, pool } = SKILL_TREES[m.cls.key], can = id => !m.skills.includes(id) && (SKILLS[id].lvl || 1) <= m.lvl;
-  const next = core.find(can) || (m.lvl % 2 === 0 && pick(pool.filter(can)));
+  const can = id => !m.skills.includes(id) && (SKILLS[id].lvl || 1) <= m.lvl;
+  const next = m.lvl % 2 === 0 && pick(SKILL_TREES[m.cls.key].pool.filter(can));
   if (next) m.skills.push(next);
 }
 
