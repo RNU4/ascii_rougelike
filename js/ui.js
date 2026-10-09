@@ -394,8 +394,11 @@ Object.assign(Game.prototype, {
       'Skills: 1-5  Wait: space',
       'K: skills  I: pack  Esc: cancel',
       'G: pick up  R: drink healing potion  O: options',
-      'T: tactics &amp; wait/follow  P: party',
-      'M: fog of war  N: ghost mode  J: load floor (debug)</span>',
+      'T: tactics &amp; wait/follow  P: party</span>',
+      '',
+      '<span style="color:#a6a">DEBUG (testing only):',
+      ' M: reveal map  N: ghost mode',
+      ' J: load any floor</span>',
     ].join('\n');
   },
 });
