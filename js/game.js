@@ -26,6 +26,7 @@ class Game {
     this.$puffs = document.getElementById('puffs');   // animated clouds (fx.puff)
     this.$floats = document.getElementById('floats'); // floating damage / heal numbers (fx.float)
     this.smooth = loadOption('smooth', true);
+    this.debug = loadOption('debug', false); // debug keys (M, N, J) - off unless switched on in the options
     this.sharedVision = loadOption('sharedVision', true);
     this.gearLook = loadOption('gearLook', true); // your gear shows on your tile (heroGearLook)
     this.$side = document.getElementById('side');
@@ -769,7 +770,11 @@ class Game {
 
   openOptions() {
     const toggle = (k, label) => ({ text: `${label.padEnd(18)} ${this[k] ? '<span style="color:#6d6">ON</span>' : '<span style="color:#f66">OFF</span>'}`,
-      run: () => { this[k] = !this[k]; saveOption(k, this[k]); if (this.map) this.updateView(); this.openOptions(); return false; } });
+      run: () => {
+        this[k] = !this[k]; saveOption(k, this[k]);
+        if (k === 'debug' && !this.debug) this.ghost = this.revealAll = false; // (switching debug off ends its cheats)
+        if (this.map) this.updateView(); this.openOptions(); return false;
+      } });
     this.openMenu('OPTIONS', [
       toggle('smooth', 'Smooth movement'),
       { text: '<span style="color:#777">  creatures slide between tiles and the view scrolls, instead of jumping</span>' },
@@ -777,6 +782,8 @@ class Game {
       { text: '<span style="color:#777">  your tile shows helm / shield / weapon marks and full-set shimmers</span>' },
       toggle('sharedVision', 'Shared vision'),
       { text: '<span style="color:#777">  you also see what your companions see</span>' },
+      toggle('debug', 'Debug mode'),
+      { text: '<span style="color:#777">  testing keys: M reveal map, N ghost mode, J load any floor</span>' },
     ]);
   }
 
@@ -857,9 +864,9 @@ class Game {
     else if (c === 'KeyT') this.openTactics();
     else if (c === 'KeyR') this.act(() => this.quaff());
     else if (c === 'KeyP') this.openParty();
-    else if (c === 'KeyN') { this.ghost = !this.ghost; this.log(`Ghost mode ${this.ghost ? 'on: no-clip, ignored by monsters, no damage' : 'off'} (debug).`, '#888'); }
-    else if (c === 'KeyJ') this.openFloorMenu();
-    else if (c === 'KeyM') { this.revealAll = !this.revealAll; this.updateView(); this.log(`Fog of war ${this.revealAll ? 'off' : 'on'} (debug).`, '#888'); }
+    else if (this.debug && c === 'KeyN') { this.ghost = !this.ghost; this.log(`Ghost mode ${this.ghost ? 'on: no-clip, ignored by monsters, no damage' : 'off'} (debug).`, '#888'); }
+    else if (this.debug && c === 'KeyJ') this.openFloorMenu();
+    else if (this.debug && c === 'KeyM') { this.revealAll = !this.revealAll; this.updateView(); this.log(`Fog of war ${this.revealAll ? 'off' : 'on'} (debug).`, '#888'); }
     else if (['Space', 'Period', 'Numpad5'].includes(c)) this.act(() => true);
     else return false;
   }

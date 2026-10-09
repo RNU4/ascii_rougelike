@@ -395,10 +395,7 @@ Object.assign(Game.prototype, {
       'K: skills  I: pack  Esc: cancel',
       'G: pick up  R: drink healing potion  O: options',
       'T: tactics &amp; wait/follow  P: party</span>',
-      '',
-      '<span style="color:#a6a">DEBUG (testing only):',
-      ' M: reveal map  N: ghost mode',
-      ' J: load any floor</span>',
+      ...(this.debug ? ['', '<span style="color:#a6a">DEBUG (testing only):', ' M: reveal map  N: ghost mode', ' J: load any floor</span>'] : []), // (option Debug mode)
     ].join('\n');
   },
 });
