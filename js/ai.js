@@ -450,24 +450,25 @@ const BOSS_PATTERNS = {
     return false;
   },
   // The Banshee (her chapel): the keen - she draws breath for a turn while the air trembles round her (marked), then
-  // screams: everyone hostile on those tiles is hurt (x1.5) and silenced 2 turns. Her keens alternate: a close one (1-2
-  // tiles - back away) and a far-reaching one (2-4 tiles - get in close, or right out); every 3 turns, 2 once she's
+  // screams: everyone hostile on those tiles is hurt (x1.8) and silenced 3 turns. Her keens alternate: a close one (1-2
+  // tiles - back away) and a far-reaching one (2-4 tiles - get in close, or right out); every 4 turns, 3 once she's
   // hurt to half. Pinned in melee she flits away (every 5 turns: dissolves and drifts back in 4-6 tiles off, among the
-  // pews). At half health "the dead answer": three ghosts rise beside her. Otherwise she fights you as baseAi chase.
+  // pews). At half health "the dead answer": three ghosts rise beside her - and again at a quarter. Otherwise she fights
+  // you as baseAi chase.
   banshee(m, g) {
     const t = m.target, seen = g.map.visible[m.y]?.[m.x], r = g.map.arenas?.find(a => inRect(a.r, m))?.r;
     const inArea = c => (r ? inRect(r, c) : dist(c, m) <= 6);
     if (m.keen) { // the scream lands
       const tiles = m.keen.tiles;
-      clearDanger(g, m.keen); m.keen = null; m.keenCd = m.answered ? 2 : 3;
+      clearDanger(g, m.keen); m.keen = null; m.keenCd = m.answered ? 1 : 2;
       tiles.forEach(c => g.fx.flash(c, '#3a4466'));
       const hit = foesOn(g, m, tiles);
       if (seen || hit.includes(g.player)) g.log(hit.length ? 'The Banshee shrieks - the sound tears through you!' : 'The Banshee shrieks at no one.', '#dde4ff');
-      hit.forEach(e => { m.attack(e, g, { mult: 1.5, magic: true, verb: 'deafen' }); if (e.alive) applyStatus(e, 'silenced', 2, g); });
+      hit.forEach(e => { m.attack(e, g, { mult: 1.8, magic: true, verb: 'deafen' }); if (e.alive) applyStatus(e, 'silenced', 3, g); });
       return true;
     }
-    if (!m.answered && m.hp <= m.maxHp / 2) {
-      m.answered = true;
+    if ((m.answered || 0) < 2 && m.hp <= m.maxHp / (m.answered ? 4 : 2)) { // (the dead answer at 1/2 and at 1/4)
+      m.answered = (m.answered || 0) + 1;
       const spots = shuffle(DIRS.map(([dx, dy]) => ({ x: m.x + dx, y: m.y + dy })).filter(c => g.map.walkable(c.x, c.y) && !g.occupied(c.x, c.y))).slice(0, 3);
       spots.forEach(c => { g.spawn(MONSTERS.ghost, c); Object.assign(g.monsters.at(-1), { awake: true, provoked: true, flashCss: { turn: g.turn, css: 'emerge' } }); });
       if (seen) g.log('The Banshee wails for the dead - and the dead answer!', '#bdf');

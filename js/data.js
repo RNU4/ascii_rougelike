@@ -119,8 +119,8 @@ const MONSTERS = {
   wight:    { name: 'Wight', ch: 'V', color: '#9fc27a', hp: 95, atk: 13, def: 3, xp: 30, ai: 'boss', pattern: 'wight', baseAi: 'chase', faction: 'undead',
     onHit: { cursed: 5 }, drain: true, darkstalker: 2, lightWeak: true, snuffCd: 4, loot: 'magic' }, // (darkstalker 2: only its eyes past 2 tiles in the dark; lightWeak: x1.5 damage in light)
   // Banshee: shuns light, and wails - everyone around it is hurt and silenced.
-  banshee:  { name: 'Banshee', ch: '§', color: '#dde4ff', hp: 85, atk: 10, def: 2, xp: 30, ai: 'boss', pattern: 'banshee', baseAi: 'chase', faction: 'undead', fly: true,
-    int: 11, keenCd: 2, loot: 'magic' }, // (her keen replaced the Wail skill; no shunLight - a boss you could stand in the brazier light and wait out)
+  banshee:  { name: 'Banshee', ch: '§', color: '#dde4ff', hp: 115, atk: 12, def: 2, xp: 30, ai: 'boss', pattern: 'banshee', baseAi: 'chase', faction: 'undead', fly: true,
+    int: 13, keenCd: 2, loot: 'magic' }, // (her keen replaced the Wail skill; no shunLight - a boss you could stand in the brazier light and wait out)
   // Bone forge (an Ossuary chamber): a rooted heap of bone and sinew that keeps assembling skeletons from the bones around
   // it (summoner ai) until you smash it. rooted: never moves, can't be knocked back.
   boneforge: { name: 'bone forge', ch: '♦', color: '#ff6a3a', hp: 30, atk: 0, def: 3, xp: 25, ai: 'summoner', faction: 'undead',
