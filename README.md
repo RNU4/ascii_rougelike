@@ -12,7 +12,7 @@ npx http-server . -p 8124
 
 og gå ind på http://localhost:8124.
 
-Vælg en klasse (Warrior, Archer, Cleric, Mage, Rogue, Necromancer eller Trickster) og begiv dig ned i krypten. Sideetager som Ossuariet, Goblin-gangene og Silkebikuben giver erfaring og udstyr, før du tager imod bosserne.
+Vælg en klasse (Warrior, Archer, Cleric, Mage, Rogue, Necromancer eller Trickster) og begiv dig ned i krypten. Sideetager som the Ossuary, the Goblin Warrens og the Silk Hive giver erfaring og udstyr, før du tager imod bosserne.
 
 ## Taster
 
