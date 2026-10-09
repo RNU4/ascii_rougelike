@@ -52,15 +52,17 @@ Object.assign(Game.prototype, {
   },
 
   // Text screens (title, menus): scale font so the longest line and all rows fit.
-  renderText(html) {
+  // fit: { cols, lines } the text must fit at the least (a menu sizes itself to its biggest detail panel, so it doesn't
+  // resize - jump - as you move the cursor between rows with shorter and longer descriptions).
+  renderText(html, fit = {}) {
     this.$map.classList.remove('square');
     this.$stage.style.margin = this.$stage.style.transform = '';
     this.$actors.hidden = this.$puffs.hidden = this.$floats.hidden = true; // creatures, clouds and numbers only show over the map
     this.$map.innerHTML = html;
     const lines = this.$map.textContent.split('\n');
     const box = this.$view, { cw, ch } = this.charSize();
-    const cols = Math.max(...lines.map(l => l.length)) + 2;
-    this.$map.style.fontSize = Math.min(30, (box.clientWidth - 8) / (cols * cw), (box.clientHeight - 8) / ((lines.length + 1) * ch)) + 'px';
+    const cols = Math.max(fit.cols || 0, ...lines.map(l => l.length)) + 2, rows = Math.max(fit.lines || 0, lines.length);
+    this.$map.style.fontSize = Math.min(30, (box.clientWidth - 8) / (cols * cw), (box.clientHeight - 8) / ((rows + 1) * ch)) + 'px';
   },
 
   render() {
@@ -88,7 +90,11 @@ Object.assign(Game.prototype, {
       return cur ? `<span style="color:#ff0">&gt;</span> <span style="background:#2a2a40">${row}</span>` : `  ${row}`;
     });
     const detail = menu.detail?.(choices[menu.sel]);
-    this.renderText(`\n  <b style="color:#ff0">${menu.title}</b>\n\n${lines.join('\n')}\n${detail ? `\n${detail}\n` : ''}`);
+    // the biggest detail panel any row has (plain text: tags stripped) - the menu is sized to fit it whichever row is selected
+    const plain = h => (h || '').replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, ' ').split('\n');
+    const panels = menu.detail ? choices.map(c => plain(menu.detail(c))) : [];
+    const fit = { cols: Math.max(0, ...panels.flat().map(l => l.length)), lines: menu.lines.length + 5 + Math.max(0, ...panels.map(p => p.length)) };
+    this.renderText(`\n  <b style="color:#ff0">${menu.title}</b>\n\n${lines.join('\n')}\n${detail ? `\n${detail}\n` : ''}`, fit);
   },
 
   renderMap() {
