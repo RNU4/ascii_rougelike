@@ -102,7 +102,7 @@ function playRun(clsKey = 'warrior', { maxTurns = 40000, floorTurns = 5000, quie
     }
     if (!goals.length) { // done here: the way on
       const t = g.side ? 'upstairs' : 'stairs';
-      goals = [...g.items.filter(i => i.kind === 'crystal'), ...g.map.cells((x, y) => g.map.get(x, y) === t)].filter(reach);
+      goals = [...g.items.filter(i => i.kind === 'crystal' || i.kind === 'key' && seenAt(i)), ...g.map.cells((x, y) => g.map.get(x, y) === t)].filter(reach);
     }
     // nothing left but no way on (the Lich re-forming while its phylactery stands in the dark): hunt what's left
     if (!goals.length) goals = g.monsters.filter(m => m.alive && !m.ally && !m.captive && !m.partOf && g.hostile(q, m)).filter(reach);
