@@ -159,7 +159,7 @@ function randomItem(depth) {
   return chance(0.45) ? makeConsumable(pick(CONSUMABLES.filter(c => c.tier <= depth + 1))) : makeGear(depth);
 }
 
-// ---- how gear looks: the paper doll (inventory, side panel) and the hero's tile ----
+// ---- how gear looks: the hero's tile ----
 // A piece's material, from its base name: [pattern, key, colour, body-armour fill].
 const GEAR_MATS = [
   [/bone|skull|femur|knuckle|finger/i, 'bone', '#e8dcb0', '≡'], [/silk|spider|brood/i, 'silk', '#ece8ff', '░'],
@@ -168,31 +168,6 @@ const GEAR_MATS = [
   [/mithril|rune/i, 'mithril', '#8fe0ff', '▓'], [/leather|glove|sandal|buckler|cap/i, 'leather', '#b48a58', '▒'],
   [/staff|wand|orb|circlet|jade/i, 'arcane', '#c8a0ff', '░'], [/ring|amulet/i, 'gold', '#e8c060', '▓'], [/./, 'iron', '#a8b4c8', '█']];
 const gearMat = it => { const [, key, color, fill] = GEAR_MATS.find(([re]) => re.test(it.base || it.name)); return { key, color, fill }; };
-// What each worn piece draws on the doll: [row, col, glyphs] over the bare figure (9x6), by base name, else by slot.
-const DOLL_FIGURE = ['         ', '    o    ', '   /|\\   ', '  / | \\  ', '   / \\   ', '  /   \\  '];
-const DOLL_ART = {
-  weapon: [[/dagger|fang/i, [[2, 1, '†']]], [/sword|blade/i, [[0, 1, '│'], [1, 1, '│'], [2, 1, '┼']]],
-    [/axe/i, [[0, 1, '│'], [1, 0, '◄'], [1, 1, '│'], [2, 1, '│']]], [/mace|club|femur/i, [[0, 1, 'O'], [1, 1, '│'], [2, 1, '│']]],
-    [/staff/i, [[0, 1, '*'], [1, 1, '│'], [2, 1, '│'], [3, 1, '│']]], [/wand/i, [[1, 1, '*'], [2, 1, '│']]], [/./, [[1, 1, '│'], [2, 1, '┼']]]],
-  offhand: [[/tower/i, [[1, 7, '█'], [2, 7, '█'], [3, 7, '█']]], [/skull/i, [[2, 7, '☻']]], [/orb/i, [[2, 7, 'o']]], [/./, [[2, 7, 'O']]]],
-  head: [[/circlet/i, [[0, 3, '-♦-']]], [/cap/i, [[0, 3, '▄▄▄']]], [/./, [[0, 3, '▄█▄']]]],
-  hands: [[/./, [[3, 2, '■'], [3, 6, '■']]]], feet: [[/./, [[5, 2, '▄'], [5, 6, '▄']]]],
-  ring: [[/./, [[3, 7, '°']]]], amulet: [[/./, [[2, 4, '•']]]],
-};
-const DOLL_ORDER = ['feet', 'body', 'hands', 'ring', 'amulet', 'head', 'weapon', 'offhand']; // later pieces draw over earlier
-// The paper doll for e (player or companion): lines of HTML. Bare figure dim; each piece in its material's colour,
-// rare pieces glowing.
-function dollLines(e) {
-  const grid = DOLL_FIGURE.map(r => [...r].map(ch => ({ ch, color: '#5a5a5a' })));
-  for (const slot of DOLL_ORDER) {
-    const it = e.gear?.[slot];
-    if (!it) continue;
-    const m = gearMat(it), glow = it.rarity === 'rare' ? `;text-shadow:0 0 4px ${m.color}` : '';
-    const art = slot === 'body' ? [[2, 3, '▐' + m.fill + '▌'], [3, 4, m.fill]] : DOLL_ART[slot].find(([re]) => re.test(it.base || it.name))[1];
-    for (const [r, c, s] of art) [...s].forEach((ch, i) => { grid[r][c + i] = { ch, color: m.color + glow }; });
-  }
-  return grid.map(row => row.map(c => `<span style="color:${c.color}">${c.ch}</span>`).join(''));
-}
 // The hero's tile (option `gearLook`): the armour drawn round the glyph out of glyphs - each worn piece a small
 // glyph shrunk and moved into place by a CSS transform (GEAR_OVERLAY: glyph, then the transform), in the piece's
 // material colour: a helm dome over the head, a cuirass's plates hugging both sides, a shield low on the left, the

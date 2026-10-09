@@ -197,7 +197,6 @@ Object.assign(Game.prototype, {
     this.openMenu('INVENTORY', [
       { text: '<span style="color:#999">Enter default · E equip/unequip · U use · D drop · G give · R heal · Esc</span>' },
       { text: '' },
-      ...dollLines(p).map(l => ({ text: `   ${l}` })), { text: '' },
       { text: `<b>Equipped</b>   ATK ${p.power}  INT ${p.spellPower}  DEF ${p.armor}  HP ${p.maxHp}  MP ${p.maxMp}  crit ${Math.round(p.crit * 100)}%` },
       ...worn, { text: '' },
       { text: `<b>Pack</b> ${p.inv.length}/${PACK_SIZE}  <span style="color:#777">[brackets: change vs. what you wear]</span>` },

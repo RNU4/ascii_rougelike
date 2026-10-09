@@ -665,7 +665,7 @@ function genLongSpiderTest(w, h) {
 }
 
 // Gear test room (EXTRA_FLOORS.geartest): a lit room with every exclusive set piece laid out in rows - the Ossuary's
-// bone armour, its relic set, the hive's silk gear - to try on (paper doll, gear on the hero).
+// bone armour, its relic set, the hive's silk gear - to try on (gear on the hero).
 function genGearTest(w, h) {
   const map = new GameMap(w, h);
   carveRect(map, 2, 2, w - 4, h - 4);
