@@ -764,8 +764,8 @@ function genCryptChambers(w, h) {
   const corridor = (a, b) => orthoPath(mid(a), mid(b)).forEach(p => map.get(p.x, p.y) === 'wall' && map.set(p.x, p.y, 'floor'));
 
   const trialAt = path.length >> 1, last = path.length - 1;
-  // Main-path roles: the four mini-boss arenas, in random order along the path (a short path leaves a random one out).
-  const role = {}, roles = shuffle(['deathknight', 'wight', 'banshee', 'serpent']); // (the flooded crypt, ARENA_BUILDS.flooded, is left out for now)
+  // Main-path roles: the mini-boss arenas, in random order along the path (a short path leaves a random one out).
+  const role = {}, roles = shuffle(['deathknight', 'banshee', 'serpent']); // (left out for now: the Wight's tomb, ARENA_BUILDS.wight, and the flooded crypt, ARENA_BUILDS.flooded)
   const slots = shuffle(path.map((_, i) => i).filter(i => i > 0 && i !== trialAt && i !== last));
   if (slots.length > roles.length) slots.push(...slots.splice(slots.indexOf(1), 1)); // (the chamber after the start stays plain if it can)
   slots.forEach((i, k) => { if (k < roles.length) role[i] = roles[k]; });
