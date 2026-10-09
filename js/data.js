@@ -278,8 +278,9 @@ const TEST_LEVEL = {
 };
 
 // A run's main floors, top to bottom (Game.changeLevel walks this list): the Blackwater Mire (where a run starts) ->
-// the Goblin Warrens (the way down is by the chief's throne) -> the boss crypt (side-floors off it to level up in).
-const RUN_FLOORS = [LEVELS[0], LEVELS[1], TEST_LEVEL];
+// the Goblin Warrens (the way down is by the chief's throne) -> the boss crypt (side-floors off it to level up in; the
+// way down is in the Lich's vault) -> the Crystal Sanctum (the last floor: the Crystal of Ages).
+const RUN_FLOORS = [LEVELS[0], LEVELS[1], TEST_LEVEL, LEVELS[5]];
 // -> { depth, testLevel } for Game: a main floor by its place in LEVELS, anything else (the crypt) loads as testLevel.
 const runFloor = def => LEVELS.includes(def) ? { depth: LEVELS.indexOf(def), testLevel: null } : { depth: def.depth, testLevel: def };
 
