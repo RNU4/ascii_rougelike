@@ -1547,7 +1547,7 @@ function genSwamp(w, h) {
 
   map.keepOut = [];
   addSunkenRuin(map);
-  addMireLair(map);
+  // addMireLair(map); // (the Mire Mother is switched off for now - she's buggy; her pool goes with her)
   addLeechPool(map);
   addWitchHut(map);
   addBanditCamp(map);
