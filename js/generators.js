@@ -730,7 +730,7 @@ function genBoneTest(w, h) {
 // side-floors - the Ossuary, the Silk Hive - made it in.
 // The crypt's mini-boss arenas (ARENA_BUILDS keys), in the order you meet them; the Lich's hall always comes last.
 // (left out for now: the Wight's tomb, ARENA_BUILDS.wight, and the flooded crypt, ARENA_BUILDS.flooded)
-const CRYPT_BOSS_ORDER = ['banshee', 'deathknight', 'serpent'];
+const CRYPT_BOSS_ORDER = ['deathknight', 'banshee', 'serpent'];
 const HUB_STAIRS = ['bonestair', 'hivestair'], HUB_STAIRS_ROOMS = ['ossuarystair', 'hivestair']; // (the warrens are the floor above now)
 // ...and until at least one of them can be reached from the start without going through a boss room (its tiles or ring).
 function genCryptHub(w, h) {
@@ -767,7 +767,7 @@ function genCryptChambers(w, h) {
   const corridor = (a, b) => orthoPath(mid(a), mid(b)).forEach(p => map.get(p.x, p.y) === 'wall' && map.set(p.x, p.y, 'floor'));
 
   const trialAt = path.length >> 1, last = path.length - 1;
-  // Main-path roles: the mini-boss arenas, always in this order along the path (easiest first; random chambers, though).
+  // Main-path roles: the mini-boss arenas, always in this order along the path (random chambers, though).
   const role = {}, roles = CRYPT_BOSS_ORDER;
   const slots = shuffle(path.map((_, i) => i).filter(i => i > 0 && i !== trialAt && i !== last));
   if (slots.length > roles.length) slots.push(...slots.splice(slots.indexOf(1), 1)); // (the chamber after the start stays plain if it can)
