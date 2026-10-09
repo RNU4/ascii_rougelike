@@ -1,5 +1,26 @@
 // Drawing: title, map (with statuses, targeting and effects), menus, side panel and banner.
 
+// Wraps each line of html to `width` visible characters, breaking at a space (tags pass through untouched, an entity counts
+// as one character); a wrapped line's continuation keeps its indent. Menu detail panels (renderMenu).
+function wrapHtml(html, width) {
+  if (!html) return html;
+  const vis = s => s.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/g, ' ').length;
+  const tail = s => s.slice(s.lastIndexOf('\n') + 1); // (the line being built, after the last break)
+  return html.split('\n').map(line => {
+    const indent = line.replace(/<[^>]*>/g, '').match(/^ */)[0];
+    let out = '', space = -1;
+    for (const t of line.match(/<[^>]*>|&[a-z#0-9]+;|[^<&]/g) || []) {
+      if (t === ' ' && vis(tail(out)) > indent.length) space = out.length;
+      out += t;
+      if (t[0] !== '<' && space >= 0 && vis(tail(out)) > width) {
+        out = out.slice(0, space) + '\n' + indent + out.slice(space + 1);
+        space = -1;
+      }
+    }
+    return out;
+  }).join('\n');
+}
+
 // Roots join up with neighbouring roots using box-drawing characters (extended ASCII / code page 437), picked from
 // which of the 4 sides have roots (N=1 E=2 S=4 W=8). The map font fills each tile, so they connect.
 // No orthogonal neighbour: / \ for a diagonal link, & for a lone clump.
@@ -89,10 +110,12 @@ Object.assign(Game.prototype, {
       const row = `${tag}<span style="color:${on ? '#eee' : '#666'}">${l.text}</span>`;
       return cur ? `<span style="color:#ff0">&gt;</span> <span style="background:#2a2a40">${row}</span>` : `  ${row}`;
     });
-    const detail = menu.detail?.(choices[menu.sel]);
-    // the biggest detail panel any row has (plain text: tags stripped) - the menu is sized to fit it whichever row is selected
-    const plain = h => (h || '').replace(/<[^>]*>/g, '').replace(/&[a-z]+;/g, ' ').split('\n');
-    const panels = menu.detail ? choices.map(c => plain(menu.detail(c))) : [];
+    // detail panels wrap to the menu's own width (its widest row, 50 at least) instead of shrinking the text to fit
+    const plain = h => (h || '').replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/g, ' ').split('\n');
+    const width = Math.max(50, ...plain(lines.join('\n')).map(l => l.length)), wrapped = r => wrapHtml(menu.detail(r), width);
+    const detail = menu.detail && wrapped(choices[menu.sel]);
+    // the biggest detail panel any row has - the menu is sized to fit it whichever row is selected
+    const panels = menu.detail ? choices.map(c => plain(wrapped(c))) : [];
     const fit = { cols: Math.max(0, ...panels.flat().map(l => l.length)), lines: menu.lines.length + 5 + Math.max(0, ...panels.map(p => p.length)) };
     this.renderText(`\n  <b style="color:#ff0">${menu.title}</b>\n\n${lines.join('\n')}\n${detail ? `\n${detail}\n` : ''}`, fit);
   },
