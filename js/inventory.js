@@ -190,13 +190,12 @@ Object.assign(Game.prototype, {
     const row = (item, slot) => ({ item, slot, run: stay(() => { const k = this.itemKeys({ item, slot }); return (k.KeyE || k.KeyU || (() => false))(); }) });
     const worn = SLOTS.map(slot => {
       const it = p.gear[slot], label = slot.padEnd(8);
-      return it ? { ...row(it, slot), text: `${label}${itemName(it)}  <span style="color:#999">${itemInfo(it)}</span>` }
+      return it ? { ...row(it, slot), text: `${label}${itemName(it)}` } // (its stats: the details panel)
         : { text: `  ${label}<span style="color:#555">-</span>` };
     });
-    const pack = p.inv.map(it => ({ ...row(it), text: `${itemName(it)}  <span style="color:#999">${itemInfo(it)}</span>` +
-      (it.kind === 'gear' ? `  [${compareGear(it, p.gear[it.slot])}]` : '') }));
+    const pack = p.inv.map(it => ({ ...row(it), text: itemName(it) + (it.kind === 'gear' ? `  [${compareGear(it, p.gear[it.slot])}]` : '') })); // (stats / what it does: the details panel)
     this.openMenu('INVENTORY', [
-      { text: '<span style="color:#999">Up/Down select · E equip/unequip · U use · D drop · G give · Enter default · R quick-heal · Esc close</span>' },
+      { text: '<span style="color:#999">Enter default · E equip/unequip · U use · D drop · G give · R heal · Esc</span>' },
       { text: '' },
       ...dollLines(p).map(l => ({ text: `   ${l}` })), { text: '' },
       { text: `<b>Equipped</b>   ATK ${p.power}  INT ${p.spellPower}  DEF ${p.armor}  HP ${p.maxHp}  MP ${p.maxMp}  crit ${Math.round(p.crit * 100)}%` },

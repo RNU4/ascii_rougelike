@@ -394,8 +394,8 @@ class Game {
     this.openMenu(who === p ? 'TOME - learn one skill' : `TOME - teach your ${who.name} one skill`, [
       { text: `The ${book.name} reveals ${offer.length} technique${offer.length > 1 ? 's' : ''}. Choose one to ${who === p ? 'learn' : 'teach'} <span style="color:#777">(Esc: keep the tome for later)</span>:` },
       { text: '' },
-      ...offer.map(id => ({ text: this.skillLine(SKILLS[id]), run: () => learn(id) })),
-    ], false);
+      ...offer.map(id => ({ text: this.skillLine(SKILLS[id]), id, run: () => learn(id) })),
+    ], false, { detail: r => r && this.skillDetail(SKILLS[r.id]) });
   }
 
   // Hotbar key pressed: instant skills fire now, ranged ones enter targeting mode.
@@ -736,7 +736,7 @@ class Game {
     // ACTIVE_SKILLS are usable; moving a reserve skill up into them swaps it in.
     const known = p.skills.map((id, i) => ({
       text: `${this.grabSkill === i ? '<span style="color:#ff0">↕</span>' : ' '} ${i < ACTIVE_SKILLS ? i + 1 : '<span style="color:#555">-</span>'}  ${i < ACTIVE_SKILLS ? this.skillLine(SKILLS[id]) : `<span style="color:#777">${this.skillLine(SKILLS[id])}</span>`}`,
-      run: () => { this.grabSkill = this.grabSkill === i ? null : i; this.openSkills(); },
+      id, run: () => { this.grabSkill = this.grabSkill === i ? null : i; this.openSkills(); },
     }));
     if (known.length > ACTIVE_SKILLS) known.splice(ACTIVE_SKILLS, 0, { text: this.inCombat()
       ? '<span style="color:#f88">  Reserve - enemies in sight: no swapping until the fight is over.</span>'
@@ -747,7 +747,7 @@ class Game {
       { text: this.grabSkill == null ? `Active - ${ACTIVE_SKILLS} slots (number keys to use; Enter on one to pick it up and reorder):` : 'Moving: Up/Down to move, Enter to drop' },
       ...known, { text: '' },
       { text: `Other skills are found in ${p.cls.title}'s Tomes (pick 1 of ${TOME_CHOICES}).` }, ...books,
-    ]);
+    ], true, { detail: r => r && this.skillDetail(SKILLS[r.id]) });
   }
 
   // Options (O).
@@ -787,10 +787,13 @@ class Game {
     ]);
   }
 
+  // A skill's menu row: name, cost, cooldown, reach (its description goes in the details panel - skillDetail).
   skillLine(s) {
     const cd = this.player.cooldownOf(s); // after INT reduction
-    return `${s.name.padEnd(17)}${String(s.mp).padStart(2)} MP  ${cd ? `cooldown ${cd}  ` : ''}${s.range ? `${s.range} tiles${s.ground ? ' (any spot)' : ''}` : 'instant'}  ${s.magic ? '<span style="color:#a8f">[INT]</span> ' : ''}${s.desc}`;
+    return `${s.name.padEnd(17)}${String(s.mp).padStart(2)} MP  ${cd ? `cooldown ${cd}  ` : ''}${s.range ? `${s.range} tiles${s.ground ? ' (any spot)' : ''}` : 'instant'}${s.magic ? '  <span style="color:#a8f">[INT]</span>' : ''}`;
   }
+  skillDetail(s) { return s && `  <b>${s.name}</b>${s.magic ? '  <span style="color:#a8f">[INT - scales with spell power]</span>' : ''}
+  ${s.desc}`; }
 
   // ---- input ----
   onKey(e) {
